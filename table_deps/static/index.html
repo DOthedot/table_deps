@@ -277,6 +277,10 @@
         <div class="legend-row"><div class="legend-line" style="background:#d29922"></div>RIGHT [OUTER]</div>
         <div class="legend-row"><div class="legend-line" style="background:#bc8cff"></div>FULL [OUTER]</div>
         <div class="legend-row"><div class="legend-line" style="background:#f85149"></div>CROSS</div>
+        <div class="legend-row">
+          <div class="legend-line" style="background:#39d0d8;background:repeating-linear-gradient(90deg,#39d0d8 0,#39d0d8 8px,transparent 8px,transparent 12px)"></div>
+          UNION [ALL]
+        </div>
       </div>
     </div>
 
@@ -510,7 +514,7 @@ function parseSQL(sql) {
       } else {
         lastJoinType = token.type;
         const hub = fromToken || pseudoHub;
-        if (hub) addEdge(hub.name, token.name, token.type);
+        if (hub) addEdge(token.name, hub.name, token.type);
         if (!fromToken && !pseudoHub) pseudoHub = token;
       }
     } else if (token.depth === 1 && token.type === 'FROM' && !token.isCTE) {
@@ -518,7 +522,7 @@ function parseSQL(sql) {
       // Connect the subquery's inner table to the current depth-0 hub,
       // using the JOIN type of the surrounding depth-0 clause.
       const hub = fromToken || pseudoHub;
-      if (hub) addEdge(hub.name, token.name, lastJoinType);
+      if (hub) addEdge(token.name, hub.name, lastJoinType);
     }
     // JOINs inside subqueries (depth ≥ 1) are intentionally skipped —
     // they are internal to the subquery and shown inside CTE boxes or ignored.
@@ -655,7 +659,8 @@ function render(data) {
   const linkSel = gMain.append('g').selectAll('line').data(edges).join('line')
     .attr('class', 'link')
     .attr('stroke', d => d.color)
-    .attr('marker-end', d => `url(#arr-${d.type})`);
+    .attr('stroke-dasharray', d => d.type === 'UNION' ? '8,4' : null)
+    .attr('marker-end', d => d.type === 'UNION' ? null : `url(#arr-${d.type})`);
 
   const linkLabelSel = gMain.append('g').selectAll('text').data(edges).join('text')
     .attr('class', 'link-label').text(d => d.type);

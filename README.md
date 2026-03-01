@@ -91,16 +91,32 @@ Launch an interactive browser-based graph that visualises table dependencies:
 uv run table-deps ui
 ```
 
-Features:
+### UI Features
 
 - Force-directed graph — nodes are draggable, canvas is zoomable and pannable
 - Schema-based colour coding (`public`, `analytics`, `hr`, `finance`, …)
+- **CTE boxes** — each CTE is rendered as a named box listing its internal tables
+- Edge arrows point from joined tables toward the main `FROM` hub, showing data flow direction
 - Edge labels show the JOIN type (INNER, LEFT, RIGHT, FULL, CROSS)
-- Sidebar with table list, stats, and schema legend
-- **Load Example** button to try the built-in complex query instantly
+- **UNION / UNION ALL** branches are connected by a dashed cyan edge between their respective hubs
+- Sidebar with table list, CTE list, stats, schema legend, and join-type legend
+- **Example** button to load a built-in complex query instantly
 - `Ctrl+Enter` / `Cmd+Enter` keyboard shortcut to re-analyse
 
 No server or extra dependencies needed — everything runs in the browser via D3.js.
+
+### Example Queries
+
+The `ui_examples/` folder contains four ready-to-paste complex queries:
+
+| File | Domain | Schemas |
+| --- | --- | --- |
+| `ecommerce_orders.sql` | E-commerce order fulfilment | `public`, `inventory`, `payments`, `shipping`, `analytics` |
+| `hr_payroll.sql` | HR payroll & headcount | `hr`, `finance`, `compliance`, `org` |
+| `analytics_funnel.sql` | Product analytics funnel | `events`, `users`, `product`, `marketing`, `billing` |
+| `finance_reporting.sql` | Multi-entity P&L consolidation | `finance`, `gl`, `fx`, `audit`, `reporting` |
+
+Each query features multiple CTEs, cross-schema joins, inline subqueries, and UNION ALL branches.
 
 ## Python Library Usage
 
@@ -133,6 +149,11 @@ table_deps/
 ├── tests/
 │   ├── test_extractor.py
 │   └── test_cli.py
+├── ui_examples/         # Complex SQL queries for testing the visualizer
+│   ├── ecommerce_orders.sql
+│   ├── hr_payroll.sql
+│   ├── analytics_funnel.sql
+│   └── finance_reporting.sql
 ├── main.py              # Backward-compatible entry point
 └── pyproject.toml
 ```
