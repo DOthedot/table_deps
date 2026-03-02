@@ -2,6 +2,21 @@
 
 Extract table dependencies from SQL queries — no database connection required.
 
+## Why This Exists
+
+Reading a complex SQL query and mentally mapping out which tables feed into which is harder than it sounds.
+
+A real-world query often has 5–10 CTEs, a mix of `LEFT JOIN`, `INNER JOIN`, and `UNION ALL` branches, inline subqueries, and tables spread across multiple schemas. By the time you reach the final `SELECT`, it's easy to lose track of the full dependency chain — which table ultimately drives the result, which ones are optional lookups, and which CTEs are just intermediate transformations.
+
+This becomes a real problem when:
+
+- **Planning a downward migration** — you need to know the exact order in which tables must be recreated or backfilled, and missing a dependency means broken pipelines.
+- **Onboarding to an unfamiliar codebase** — tracing what a query actually touches, without having to run it against a live database.
+- **Refactoring or deprecating tables** — understanding what upstream queries depend on a table before you change or drop it.
+- **Reviewing someone else's SQL** — quickly building a mental model of a query you didn't write.
+
+`table-deps` solves this by parsing the SQL statically (no database connection needed) and rendering an interactive dependency graph — so you can see the full picture in seconds instead of reading line by line.
+
 ## Features
 
 - Detects tables after `FROM`, `JOIN`, `INTO`, and `UPDATE`
@@ -90,6 +105,8 @@ Launch an interactive browser-based graph that visualises table dependencies:
 ```bash
 uv run table-deps ui
 ```
+
+![table-deps graph UI](docs/ui_screenshot.png)
 
 ### UI Features
 
