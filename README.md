@@ -139,7 +139,7 @@ uv run table-deps project-ui /path/to/your/project
 
 Files must follow the `schema.table_name.sql` naming convention. Each file becomes a node; the graph flows **left → right** by dependency level — source/raw tables on the left, reports and marts on the right.
 
-![Project DAG UI](docs/project_overview_screenshot.png)
+![Project DAG UI](docs/project_overview_ui.png)
 
 ### Project DAG Features
 
