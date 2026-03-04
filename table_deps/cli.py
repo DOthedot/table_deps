@@ -1,6 +1,7 @@
 """Command-line interface for table-deps."""
 
 import argparse
+import base64
 import json
 import logging
 import sys
@@ -8,6 +9,7 @@ import webbrowser
 from pathlib import Path
 
 from table_deps.extractor import extract_tables
+from table_deps.project_scanner import scan_project
 
 logger = logging.getLogger(__name__)
 
@@ -30,6 +32,12 @@ examples:
 
   # JSON output
   table-deps "SELECT * FROM orders" --output-format json
+
+  # Open single-query visualizer UI
+  table-deps ui
+
+  # Open project overview UI for a directory of .sql files
+  table-deps project-ui ./my_project/
         """,
     )
     parser.add_argument(
@@ -95,10 +103,30 @@ def _print_results(tables: list[str], output_format: str) -> None:
 
 
 def _open_ui() -> int:
-    """Open the browser-based visualizer."""
+    """Open the browser-based SQL visualizer."""
     html = Path(__file__).parent / "static" / "index.html"
     url = html.resolve().as_uri()
     print(f"Opening visualizer at: {url}")
+    webbrowser.open(url)
+    return 0
+
+
+def _open_project_ui(project_path: str) -> int:
+    """Scan a project directory and open the project overview UI."""
+    try:
+        data = scan_project(project_path)
+    except ValueError as exc:
+        print(f"Error: {exc}", file=sys.stderr)
+        return 1
+
+    payload = base64.b64encode(json.dumps(data).encode()).decode()
+    html = Path(__file__).parent / "static" / "project_overview.html"
+    url = html.resolve().as_uri() + "#" + payload
+
+    n = data["stats"]["total_tables"]
+    e = data["stats"]["total_edges"]
+    print(f"Project: {data['project_name']}  ({n} tables, {e} dependencies)")
+    print(f"Opening project overview at: {html.resolve().as_uri()}")
     webbrowser.open(url)
     return 0
 
@@ -112,10 +140,15 @@ def main(argv: list[str] | None = None) -> int:
     Returns:
         Exit code (0 = success, 1 = error).
     """
-    # Handle `table-deps ui` before building the full parser
+    # Handle subcommands before building the full parser
     raw = argv if argv is not None else sys.argv[1:]
     if raw and raw[0] == "ui":
         return _open_ui()
+    if raw and raw[0] == "project-ui":
+        if len(raw) < 2:
+            print("Usage: table-deps project-ui <directory>", file=sys.stderr)
+            return 1
+        return _open_project_ui(raw[1])
 
     parser = _build_parser()
     args = parser.parse_args(argv)

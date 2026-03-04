@@ -1,32 +1,51 @@
 # table-deps
 
-Extract table dependencies from SQL queries — no database connection required.
+Extract SQL table dependencies and visualise them as interactive graphs — no database connection required.
+
+---
 
 ## Why This Exists
 
 Reading a complex SQL query and mentally mapping out which tables feed into which is harder than it sounds.
 
-A real-world query often has 5–10 CTEs, a mix of `LEFT JOIN`, `INNER JOIN`, and `UNION ALL` branches, inline subqueries, and tables spread across multiple schemas. By the time you reach the final `SELECT`, it's easy to lose track of the full dependency chain — which table ultimately drives the result, which ones are optional lookups, and which CTEs are just intermediate transformations.
+A real-world query often has 5–10 CTEs, a mix of `LEFT JOIN`, `INNER JOIN`, and `UNION ALL` branches, inline subqueries, and tables spread across multiple schemas. By the time you reach the final `SELECT`, it's easy to lose track of the full dependency chain.
 
 This becomes a real problem when:
 
-- **Planning a downward migration** — you need to know the exact order in which tables must be recreated or backfilled, and missing a dependency means broken pipelines.
-- **Onboarding to an unfamiliar codebase** — tracing what a query actually touches, without having to run it against a live database.
-- **Refactoring or deprecating tables** — understanding what upstream queries depend on a table before you change or drop it.
+- **Planning a migration** — you need the exact order in which tables must be recreated or backfilled.
+- **Onboarding to an unfamiliar codebase** — tracing what a query actually touches, without running it against a live database.
+- **Refactoring or deprecating tables** — understanding what upstream queries will break before you change anything.
 - **Reviewing someone else's SQL** — quickly building a mental model of a query you didn't write.
 
-`table-deps` solves this by parsing the SQL statically (no database connection needed) and rendering an interactive dependency graph — so you can see the full picture in seconds instead of reading line by line.
+`table-deps` solves this by parsing SQL statically and rendering interactive dependency graphs — so you see the full picture in seconds instead of reading line by line.
+
+---
+
+## Quick Start
+
+```bash
+# Install
+uv sync
+
+# Visualise a single SQL query in the browser
+uv run table-deps ui
+
+# Visualise an entire project directory as a DAG
+uv run table-deps project-ui test_projects/kimball_retail
+```
+
+---
 
 ## Features
 
-- Detects tables after `FROM`, `JOIN`, `INTO`, and `UPDATE`
-- Strips CTEs (WITH clauses) — aliases are excluded from results
-- Handles schema-qualified names (`schema.table`, `db.schema.table`)
-- Ignores table names inside comments and string literals
-- Supports backtick, double-quote, and bracket-quoted identifiers
-- Three output formats: `plain`, `json`, `csv`
-- Interactive browser-based graph visualizer (`table-deps ui`)
-- Usable as a CLI tool or as a Python library
+| Area | Feature |
+| --- | --- |
+| **Parser** | Detects `FROM`, `JOIN`, `INTO`, `UPDATE`; strips CTE aliases; handles schema-qualified names, quoted identifiers, comments |
+| **CLI** | Plain / JSON / CSV output; reads from inline SQL, file, or stdin |
+| **SQL Visualizer** | Force-directed graph of a single query — CTEs as named boxes, join-type edge labels, UNION branches |
+| **Project DAG** | Left-to-right DAG of an entire project directory — one node per `.sql` file, cross-file dependency edges |
+
+---
 
 ## Requirements
 
@@ -38,11 +57,13 @@ This becomes a real problem when:
 uv sync
 ```
 
-Install with development dependencies (pytest, coverage):
+With development dependencies (pytest, coverage):
 
 ```bash
 uv sync --extra dev
 ```
+
+---
 
 ## CLI Usage
 
@@ -52,79 +73,52 @@ table-deps [SQL_OR_FILE] [--file] [--output-format {plain,json,csv}] [--verbose]
 
 ### Examples
 
-#### Inline SQL
-
 ```bash
+# Inline SQL
 table-deps "SELECT * FROM orders JOIN customers ON orders.customer_id = customers.id"
-# Tables found:
-#   - customers
-#   - orders
-```
 
-#### From a file
-
-```bash
+# From a file
 table-deps --file query.sql
-```
 
-#### From stdin
-
-```bash
+# From stdin
 cat query.sql | table-deps
-```
 
-#### JSON output
-
-```bash
+# JSON output
 table-deps "SELECT * FROM orders JOIN customers ON orders.customer_id = customers.id" -o json
-# {
-#   "tables": [
-#     "customers",
-#     "orders"
-#   ]
-# }
-```
 
-#### CSV output
-
-```bash
+# CSV output
 table-deps "SELECT * FROM orders JOIN customers ON orders.customer_id = customers.id" -o csv
-# customers,orders
-```
 
-#### Debug logging
-
-```bash
+# Debug logging
 table-deps "SELECT * FROM orders" --verbose
 ```
 
-## Visual Graph UI
+---
 
-Launch an interactive browser-based graph that visualises table dependencies:
+## SQL Visualizer UI
+
+Visualise the dependencies inside a **single SQL query** as an interactive force-directed graph:
 
 ```bash
 uv run table-deps ui
 ```
 
-![table-deps graph UI](docs/ui_screenshot.png)
+![SQL Visualizer](docs/ui_screenshot.png)
 
-### UI Features
+### SQL Visualizer Features
 
 - Force-directed graph — nodes are draggable, canvas is zoomable and pannable
 - Schema-based colour coding (`public`, `analytics`, `hr`, `finance`, …)
-- **CTE boxes** — each CTE is rendered as a named box listing its internal tables
-- Edge arrows point from joined tables toward the main `FROM` hub, showing data flow direction
-- Edge labels show the JOIN type (INNER, LEFT, RIGHT, FULL, CROSS)
-- **UNION / UNION ALL** branches are connected by a dashed cyan edge between their respective hubs
-- Sidebar with table list, CTE list, stats, schema legend, and join-type legend
-- **Example** button to load a built-in complex query instantly
-- `Ctrl+Enter` / `Cmd+Enter` keyboard shortcut to re-analyse
-
-No server or extra dependencies needed — everything runs in the browser via D3.js.
+- **CTE boxes** — each CTE rendered as a named box listing its internal tables
+- Edge arrows show data flow direction; edge labels show JOIN type (INNER, LEFT, RIGHT, FULL, CROSS)
+- **UNION / UNION ALL** branches connected by dashed cyan edges
+- Sidebar: table list, CTE list, stats, schema legend, join-type legend
+- **★ Example** button — loads a built-in complex query instantly
+- `Ctrl+Enter` / `Cmd+Enter` to re-analyse
 
 ### Example Queries
 
-The `ui_examples/` folder contains four ready-to-paste complex queries:
+The `ui_examples/` folder contains four ready-to-paste queries:
 
 | File | Domain | Schemas |
 | --- | --- | --- |
@@ -133,7 +127,61 @@ The `ui_examples/` folder contains four ready-to-paste complex queries:
 | `analytics_funnel.sql` | Product analytics funnel | `events`, `users`, `product`, `marketing`, `billing` |
 | `finance_reporting.sql` | Multi-entity P&L consolidation | `finance`, `gl`, `fx`, `audit`, `reporting` |
 
-Each query features multiple CTEs, cross-schema joins, inline subqueries, and UNION ALL branches.
+---
+
+## Project DAG UI
+
+Scan a directory of SQL files and visualise the **entire project's cross-file dependency graph**:
+
+```bash
+uv run table-deps project-ui /path/to/your/project
+```
+
+Files must follow the `schema.table_name.sql` naming convention. Each file becomes a node; the graph flows **left → right** by dependency level — source/raw tables on the left, reports and marts on the right.
+
+![Project DAG UI](docs/project_overview_screenshot.png)
+
+### Project DAG Features
+
+- **Left-to-right DAG layout** — topological levels computed automatically, no configuration needed
+- **Dynamic schema colouring** — the schema prefix (everything before the first `.` in the filename) is used as the layer colour; works for any architecture (Medallion, Kimball, Data Vault, etc.)
+- **CTE-style node boxes** — each node shows its schema header and dependency list; coloured dots distinguish internal project deps from external refs
+- **Physics simulation** — nodes repel each other and bounce; drag a node and release to watch it spring back to its original position
+- **Live edge stretching** — bezier edges redraw in real time while dragging
+- **Double-click a node** → opens that file's SQL in the SQL Visualizer in a new tab, auto-analyzed
+- **★ Example** button — loads the Kimball retail project instantly (no folder needed)
+- Zoom · Pan · Fit-to-view · Reset layout controls
+- Sidebar: project stats, table list sorted by DAG level, schema colour legend
+- Works via CLI (hash injection) **or** browser folder picker / drag-and-drop
+
+### Naming Convention
+
+```text
+schema.table_name.sql
+│       │
+│       └─ table name (underscores ok)
+└─ schema / layer prefix  →  determines node colour
+```
+
+Examples: `raw.orders.sql`, `dim.customer.sql`, `fact.sales.sql`, `mart.revenue_summary.sql`
+
+### Example Projects
+
+Three example projects are included under `test_projects/`:
+
+| Project | Architecture | Layers | Nodes | Edges |
+| --- | --- | --- | --- | --- |
+| `kimball_retail` | Kimball star schema | `src` → `dim` → `fact` → `rpt` | 15 | 28 |
+| `forecast_monthly` | Medallion | `raw` → `staging` → `mart` → `gold` | 11 | 17 |
+| `data_vault` | Data Vault 2.0 | `raw` → `hub`/`link`/`sat` → `bv` → `mart` | 19 | 35 |
+
+```bash
+uv run table-deps project-ui test_projects/kimball_retail
+uv run table-deps project-ui test_projects/forecast_monthly
+uv run table-deps project-ui test_projects/data_vault
+```
+
+---
 
 ## Python Library Usage
 
@@ -151,29 +199,41 @@ tables = extract_tables(sql)
 print(tables)  # ['departments', 'employees']
 ```
 
-`extract_tables` raises `ValueError` for empty input and returns a sorted list of unique, lowercased table names.
+`extract_tables` raises `ValueError` for empty input and returns a sorted, deduplicated, lowercased list of table names with CTE aliases removed.
+
+---
 
 ## Project Structure
 
 ```text
 table_deps/
-├── table_deps/          # Library package
-│   ├── __init__.py      # Public API: extract_tables
-│   ├── extractor.py     # Core parsing logic
-│   ├── cli.py           # argparse-based CLI
+├── table_deps/              # Library package
+│   ├── __init__.py          # Public API: extract_tables
+│   ├── extractor.py         # Core regex parsing logic
+│   ├── cli.py               # CLI — ui and project-ui subcommands
+│   ├── project_scanner.py   # Directory scanner: builds cross-file dep graph
 │   └── static/
-│       └── index.html   # D3.js graph visualizer (opened by `table-deps ui`)
+│       ├── index.html             # SQL Visualizer (table-deps ui)
+│       └── project_overview.html  # Project DAG UI (table-deps project-ui)
 ├── tests/
-│   ├── test_extractor.py
-│   └── test_cli.py
-├── ui_examples/         # Complex SQL queries for testing the visualizer
+│   ├── test_extractor.py    # 36 parser tests
+│   └── test_cli.py          # 8 CLI tests
+├── ui_examples/             # Complex SQL queries for the SQL Visualizer
 │   ├── ecommerce_orders.sql
 │   ├── hr_payroll.sql
 │   ├── analytics_funnel.sql
 │   └── finance_reporting.sql
-├── main.py              # Backward-compatible entry point
+├── test_projects/           # Example multi-file projects for the Project DAG UI
+│   ├── kimball_retail/      # Kimball star schema  (15 files)
+│   ├── forecast_monthly/    # Medallion architecture (11 files)
+│   └── data_vault/          # Data Vault 2.0 (19 files)
+├── docs/
+│   └── ui_screenshot.png
+├── main.py                  # Backward-compatible entry point
 └── pyproject.toml
 ```
+
+---
 
 ## Running Tests
 
@@ -187,8 +247,10 @@ With coverage:
 uv run pytest --cov=table_deps --cov-report=term-missing
 ```
 
+---
+
 ## Limitations
 
-- Uses regex-based parsing, not a full SQL AST parser.
-  Extremely unusual SQL constructs (e.g. dynamic SQL built inside stored procedures) may not be handled correctly.
+- Uses regex-based parsing, not a full SQL AST. Extremely unusual constructs (e.g. dynamic SQL in stored procedures) may not parse correctly.
 - Does not resolve view definitions or follow cross-database references.
+- Project DAG UI requires files named `schema.table.sql`; files not matching this pattern are skipped.

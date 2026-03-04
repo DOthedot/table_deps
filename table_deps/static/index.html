@@ -955,6 +955,19 @@ document.getElementById('clear-btn').addEventListener('click', () => {
   });
 });
 window.addEventListener('resize', () => { if (document.getElementById('sql-input').value.trim()) analyze(); });
+
+// ── URL hash loading: project_overview opens this page with base64 SQL ──
+window.addEventListener('load', () => {
+  const hash = location.hash.slice(1);
+  if (!hash) return;
+  try {
+    const sql = atob(hash);
+    document.getElementById('sql-input').value = sql;
+    analyze();
+  } catch (e) {
+    console.warn('Could not decode hash payload:', e);
+  }
+});
 </script>
 </body>
 </html>
