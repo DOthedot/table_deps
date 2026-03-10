@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>table-deps — SQL Visualizer</title>
+  <link rel="stylesheet" href="/static/css/shared.css" />
+  <link rel="stylesheet" href="/static/css/visualizer.css" />
+</head>
+<body>
+
+<header>
+  <h1>&#x2b21; table-deps</h1>
+  <span>SQL Table Dependency Visualizer</span>
+  <div class="spacer"></div>
+  <span class="tip">Scroll to zoom &middot; Drag nodes &middot; Pan canvas</span>
+  <a href="/project" style="font-size:11px;color:var(--muted);text-decoration:none;padding:3px 8px;background:var(--surface2);border:1px solid var(--border);border-radius:4px;">Project DAG</a>
+</header>
+
+<main>
+  <!-- ── SIDEBAR ── -->
+  <aside id="sidebar">
+
+    <div class="section">
+      <div class="section-label">SQL Query</div>
+      <textarea id="sql-input"
+        placeholder="Paste your SQL here&#8230;&#10;&#10;SELECT * FROM orders&#10;  JOIN customers ON orders.customer_id = customers.id"></textarea>
+      <div class="btn-row">
+        <button id="analyze-btn">&#9654; Analyze</button>
+        <button id="example-btn">Example</button>
+        <button id="clear-btn">&#x2715;</button>
+      </div>
+    </div>
+
+    <div class="section" id="stats-section" style="display:none">
+      <div class="section-label">Summary</div>
+      <div class="stats-row">
+        <div class="stat-card"><div class="num" id="table-count">0</div><div class="lbl">Tables</div></div>
+        <div class="stat-card"><div class="num" id="cte-count">0</div><div class="lbl">CTEs</div></div>
+        <div class="stat-card"><div class="num" id="edge-count">0</div><div class="lbl">Joins</div></div>
+      </div>
+    </div>
+
+    <div class="section" id="ctes-section" style="display:none">
+      <div class="section-label">CTEs (virtual tables)</div>
+      <div id="cte-list"></div>
+    </div>
+
+    <div class="section" id="tables-section" style="display:none">
+      <div class="section-label">Tables</div>
+      <ul id="table-list"></ul>
+    </div>
+
+    <div class="section" id="schema-legend-section" style="display:none">
+      <div class="section-label">Schema Colors</div>
+      <div class="legend-grid" id="schema-legend"></div>
+    </div>
+
+    <div class="section">
+      <div class="section-label">Legend</div>
+      <div class="legend-grid">
+        <div class="legend-row"><div class="legend-swatch" style="background:#58a6ff"></div>Table node</div>
+        <div class="legend-row"><div class="legend-rect" style="background:color-mix(in srgb,#a78bfa 15%,transparent);border:1px solid #a78bfa"></div>CTE box</div>
+      </div>
+      <div class="section-label" style="margin-top:12px">Join Types</div>
+      <div class="legend-grid">
+        <div class="legend-row"><div class="legend-line" style="background:#94a3b8"></div>INNER / JOIN</div>
+        <div class="legend-row"><div class="legend-line" style="background:#3fb950"></div>LEFT [OUTER]</div>
+        <div class="legend-row"><div class="legend-line" style="background:#d29922"></div>RIGHT [OUTER]</div>
+        <div class="legend-row"><div class="legend-line" style="background:#bc8cff"></div>FULL [OUTER]</div>
+        <div class="legend-row"><div class="legend-line" style="background:#f85149"></div>CROSS</div>
+        <div class="legend-row">
+          <div class="legend-line" style="background:repeating-linear-gradient(90deg,#39d0d8 0,#39d0d8 8px,transparent 8px,transparent 12px)"></div>
+          UNION [ALL]
+        </div>
+      </div>
+    </div>
+
+  </aside>
+
+  <!-- ── GRAPH CANVAS ── -->
+  <div id="graph-container">
+    <div id="empty-state">
+      <div class="icon">&#x2b21;</div>
+      <p>Paste a SQL query and click <strong>Analyze</strong></p>
+      <small>Or click <strong>Example</strong> to load a complex query</small>
+    </div>
+    <svg id="graph"></svg>
+    <div id="tooltip">
+      <div class="tt-name" id="tt-name"></div>
+      <div class="tt-row"><span id="tt-label1">Schema</span><span class="tt-val" id="tt-val1">&mdash;</span></div>
+      <div class="tt-row"><span>Joins</span><span class="tt-val" id="tt-degree">0</span></div>
+    </div>
+    <div id="graph-controls">
+      <div class="ctrl-btn" id="zoom-in"  title="Zoom in">+</div>
+      <div class="ctrl-btn" id="zoom-out" title="Zoom out">&minus;</div>
+      <div class="ctrl-btn" id="zoom-fit" title="Fit to view">&#x229f;</div>
+    </div>
+  </div>
+</main>
+
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script src="/static/js/colors.js"></script>
+<script src="/static/js/sql_parser.js"></script>
+<script src="/static/js/visualizer.js"></script>
+</body>
+</html>

@@ -1,339 +1,9 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>table-deps — SQL Visualizer</title>
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+'use strict';
 
-    :root {
-      --bg:         #0d1117;
-      --surface:    #161b22;
-      --surface2:   #21262d;
-      --border:     #30363d;
-      --text:       #e6edf3;
-      --muted:      #8b949e;
-      --accent:     #58a6ff;
-      --green:      #3fb950;
-      --orange:     #d29922;
-      --red:        #f85149;
-      --purple:     #bc8cff;
-      --cte:        #a78bfa;   /* violet for CTE boxes */
-    }
-
-    body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      height: 100vh;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-    }
-
-    /* ── HEADER ─────────────────────────────── */
-    header {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 10px 20px;
-      background: var(--surface);
-      border-bottom: 1px solid var(--border);
-      flex-shrink: 0;
-    }
-    header h1 { font-size: 16px; font-weight: 700; font-family: 'SF Mono','Fira Code',monospace; color: var(--accent); }
-    header span { font-size: 12px; color: var(--muted); }
-    header .spacer { flex: 1; }
-    header .tip {
-      font-size: 11px; color: var(--muted);
-      background: var(--surface2); border: 1px solid var(--border);
-      border-radius: 4px; padding: 3px 8px;
-    }
-
-    /* ── LAYOUT ──────────────────────────────── */
-    main { display: flex; flex: 1; overflow: hidden; }
-
-    /* ── SIDEBAR ─────────────────────────────── */
-    #sidebar {
-      width: 280px; min-width: 240px;
-      background: var(--surface); border-right: 1px solid var(--border);
-      overflow-y: auto; display: flex; flex-direction: column;
-    }
-    .section { padding: 14px 16px; border-bottom: 1px solid var(--border); }
-    .section-label {
-      font-size: 10px; font-weight: 700; text-transform: uppercase;
-      letter-spacing: 0.09em; color: var(--muted); margin-bottom: 10px;
-    }
-
-    textarea#sql-input {
-      width: 100%; height: 160px;
-      background: var(--surface2); border: 1px solid var(--border); border-radius: 6px;
-      color: var(--text); font-family: 'SF Mono','Fira Code',monospace;
-      font-size: 11px; line-height: 1.6; padding: 8px 10px;
-      resize: vertical; outline: none; transition: border-color 0.15s;
-    }
-    textarea#sql-input:focus { border-color: var(--accent); }
-
-    .btn-row { display: flex; gap: 8px; margin-top: 10px; }
-    button {
-      cursor: pointer; border: none; border-radius: 6px;
-      font-size: 12px; font-weight: 600; padding: 7px 14px;
-      transition: opacity 0.15s, transform 0.1s;
-    }
-    button:hover { opacity: 0.85; }
-    button:active { transform: scale(0.97); }
-    #analyze-btn { flex: 1; background: var(--accent); color: #0d1117; }
-    #example-btn { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
-    #clear-btn   { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); padding: 7px 10px; }
-
-    /* stats */
-    .stats-row { display: flex; gap: 8px; }
-    .stat-card {
-      flex: 1; background: var(--surface2); border: 1px solid var(--border);
-      border-radius: 6px; padding: 8px 10px; text-align: center;
-    }
-    .stat-card .num { font-size: 20px; font-weight: 700; color: var(--accent); line-height: 1; }
-    .stat-card .lbl { font-size: 10px; color: var(--muted); margin-top: 2px; }
-
-    /* table list */
-    #table-list {
-      list-style: none; display: flex; flex-direction: column;
-      gap: 3px; max-height: 180px; overflow-y: auto;
-    }
-    #table-list li {
-      display: flex; align-items: center; gap: 8px;
-      padding: 5px 8px; border-radius: 4px;
-      font-size: 11px; font-family: 'SF Mono',monospace;
-      color: var(--text); background: var(--surface2);
-      cursor: default; transition: background 0.1s;
-    }
-    #table-list li:hover { background: var(--border); }
-    #table-list li .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-    #table-list li .badge {
-      margin-left: auto; font-size: 9px; color: var(--muted);
-      background: var(--border); border-radius: 3px; padding: 1px 4px;
-    }
-
-    /* CTE list */
-    #cte-list { display: flex; flex-direction: column; gap: 8px; max-height: 220px; overflow-y: auto; }
-    .cte-item {
-      background: var(--surface2); border: 1px solid var(--cte);
-      border-radius: 6px; overflow: hidden;
-    }
-    .cte-item-header {
-      background: color-mix(in srgb, var(--cte) 15%, transparent);
-      padding: 5px 10px;
-      font-size: 11px; font-weight: 700; font-family: 'SF Mono',monospace;
-      color: var(--cte); display: flex; align-items: center; gap: 6px;
-    }
-    .cte-item-header .cte-badge {
-      margin-left: auto; font-size: 9px; font-weight: 600;
-      background: color-mix(in srgb, var(--cte) 20%, transparent);
-      border-radius: 3px; padding: 1px 5px; color: var(--cte);
-    }
-    .cte-item-tables { padding: 4px 10px 8px; display: flex; flex-direction: column; gap: 2px; }
-    .cte-item-table {
-      font-size: 10px; font-family: 'SF Mono',monospace;
-      color: var(--muted); padding: 1px 0;
-    }
-
-    /* legend */
-    .legend-grid { display: flex; flex-direction: column; gap: 5px; }
-    .legend-row { display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--muted); }
-    .legend-swatch { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
-    .legend-rect   { width: 16px; height: 10px; border-radius: 2px; flex-shrink: 0; }
-    .legend-line   { width: 22px; height: 2px; border-radius: 1px; flex-shrink: 0; }
-
-    /* ── GRAPH CANVAS ────────────────────────── */
-    #graph-container {
-      flex: 1; position: relative; overflow: hidden;
-      background: #f5f0eb;
-    }
-    #graph { width: 100%; height: 100%; }
-    #graph-container::before {
-      content: ''; position: absolute; inset: 0;
-      background-image: radial-gradient(circle, #1a1a1a 1px, transparent 1px);
-      background-size: 28px 28px; opacity: 0.18; pointer-events: none;
-    }
-
-    #empty-state {
-      position: absolute; inset: 0; display: flex; flex-direction: column;
-      align-items: center; justify-content: center; gap: 10px;
-      color: var(--muted); pointer-events: none; z-index: 1;
-    }
-    #empty-state .icon { font-size: 40px; opacity: 0.3; }
-    #empty-state p { font-size: 14px; }
-    #empty-state small { font-size: 11px; opacity: 0.6; }
-
-    /* ── TOOLTIP ─────────────────────────────── */
-    #tooltip {
-      display: none; position: absolute;
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: 8px; padding: 10px 14px; font-size: 12px;
-      pointer-events: none; z-index: 20;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.5); min-width: 160px;
-    }
-    #tooltip .tt-name { font-weight: 700; font-family: monospace; color: var(--text); margin-bottom: 6px; }
-    #tooltip .tt-row { display: flex; justify-content: space-between; gap: 16px; color: var(--muted); font-size: 11px; margin-top: 2px; }
-    #tooltip .tt-val { color: var(--text); font-weight: 600; }
-
-    /* ── CONTROLS ────────────────────────────── */
-    #graph-controls {
-      position: absolute; bottom: 16px; right: 16px;
-      display: flex; flex-direction: column; gap: 4px; z-index: 10;
-    }
-    .ctrl-btn {
-      width: 32px; height: 32px; background: var(--surface);
-      border: 1px solid var(--border); border-radius: 6px;
-      color: var(--text); font-size: 16px;
-      display: flex; align-items: center; justify-content: center;
-      cursor: pointer; transition: background 0.15s;
-    }
-    .ctrl-btn:hover { background: var(--surface2); }
-
-    /* ── SVG STYLES ──────────────────────────── */
-    .link { stroke-opacity: 0.55; stroke-width: 1.5; fill: none; }
-    .link-label {
-      font-size: 9px; font-family: 'SF Mono',monospace; font-weight: 600;
-      fill: #333333; text-anchor: middle; dominant-baseline: middle;
-      pointer-events: none; user-select: none;
-    }
-    .table-node circle { stroke-width: 2px; }
-    .table-node:hover circle { stroke-width: 3px; }
-    .table-node text { pointer-events: none; user-select: none; text-anchor: middle; dominant-baseline: middle; }
-    .cte-node { cursor: grab; }
-    .cte-node:active { cursor: grabbing; }
-    .cte-node text { pointer-events: none; user-select: none; }
-    .cte-node rect { transition: filter 0.15s; }
-    .cte-node:hover .cte-bg { filter: brightness(1.15); }
-
-    ::-webkit-scrollbar { width: 5px; }
-    ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
-  </style>
-</head>
-<body>
-
-<header>
-  <h1>⬡ table-deps</h1>
-  <span>SQL Table Dependency Visualizer</span>
-  <div class="spacer"></div>
-  <span class="tip">Scroll to zoom · Drag nodes · Pan canvas</span>
-</header>
-
-<main>
-  <!-- ── SIDEBAR ── -->
-  <aside id="sidebar">
-
-    <div class="section">
-      <div class="section-label">SQL Query</div>
-      <textarea id="sql-input"
-        placeholder="Paste your SQL here…&#10;&#10;SELECT * FROM orders&#10;  JOIN customers ON orders.customer_id = customers.id"></textarea>
-      <div class="btn-row">
-        <button id="analyze-btn">▶ Analyze</button>
-        <button id="example-btn">Example</button>
-        <button id="clear-btn">✕</button>
-      </div>
-    </div>
-
-    <div class="section" id="stats-section" style="display:none">
-      <div class="section-label">Summary</div>
-      <div class="stats-row">
-        <div class="stat-card"><div class="num" id="table-count">0</div><div class="lbl">Tables</div></div>
-        <div class="stat-card"><div class="num" id="cte-count">0</div><div class="lbl">CTEs</div></div>
-        <div class="stat-card"><div class="num" id="edge-count">0</div><div class="lbl">Joins</div></div>
-      </div>
-    </div>
-
-    <div class="section" id="ctes-section" style="display:none">
-      <div class="section-label">CTEs (virtual tables)</div>
-      <div id="cte-list"></div>
-    </div>
-
-    <div class="section" id="tables-section" style="display:none">
-      <div class="section-label">Tables</div>
-      <ul id="table-list"></ul>
-    </div>
-
-    <div class="section" id="schema-legend-section" style="display:none">
-      <div class="section-label">Schema Colors</div>
-      <div class="legend-grid" id="schema-legend"></div>
-    </div>
-
-    <div class="section">
-      <div class="section-label">Legend</div>
-      <div class="legend-grid">
-        <div class="legend-row"><div class="legend-swatch" style="background:#58a6ff"></div>Table node</div>
-        <div class="legend-row"><div class="legend-rect" style="background:color-mix(in srgb,#a78bfa 15%,transparent);border:1px solid #a78bfa"></div>CTE box</div>
-      </div>
-      <div class="section-label" style="margin-top:12px">Join Types</div>
-      <div class="legend-grid">
-        <div class="legend-row"><div class="legend-line" style="background:#94a3b8"></div>INNER / JOIN</div>
-        <div class="legend-row"><div class="legend-line" style="background:#3fb950"></div>LEFT [OUTER]</div>
-        <div class="legend-row"><div class="legend-line" style="background:#d29922"></div>RIGHT [OUTER]</div>
-        <div class="legend-row"><div class="legend-line" style="background:#bc8cff"></div>FULL [OUTER]</div>
-        <div class="legend-row"><div class="legend-line" style="background:#f85149"></div>CROSS</div>
-        <div class="legend-row">
-          <div class="legend-line" style="background:#39d0d8;background:repeating-linear-gradient(90deg,#39d0d8 0,#39d0d8 8px,transparent 8px,transparent 12px)"></div>
-          UNION [ALL]
-        </div>
-      </div>
-    </div>
-
-  </aside>
-
-  <!-- ── GRAPH CANVAS ── -->
-  <div id="graph-container">
-    <div id="empty-state">
-      <div class="icon">⬡</div>
-      <p>Paste a SQL query and click <strong>Analyze</strong></p>
-      <small>Or click <strong>Example</strong> to load a complex query</small>
-    </div>
-    <svg id="graph"></svg>
-    <div id="tooltip">
-      <div class="tt-name" id="tt-name"></div>
-      <div class="tt-row"><span id="tt-label1">Schema</span><span class="tt-val" id="tt-val1">—</span></div>
-      <div class="tt-row"><span>Joins</span><span class="tt-val" id="tt-degree">0</span></div>
-    </div>
-    <div id="graph-controls">
-      <div class="ctrl-btn" id="zoom-in"  title="Zoom in">+</div>
-      <div class="ctrl-btn" id="zoom-out" title="Zoom out">−</div>
-      <div class="ctrl-btn" id="zoom-fit" title="Fit to view">⊡</div>
-    </div>
-  </div>
-</main>
-
-<script src="https://d3js.org/d3.v7.min.js"></script>
-<script>
 // ═══════════════════════════════════════════════════════════════
-// CONSTANTS
+// CONSTANTS  (colors.js provides SCHEMA_PALETTE + schemaColor)
+//            (sql_parser.js provides SQL_KEYWORDS + FROM_JOIN_RE)
 // ═══════════════════════════════════════════════════════════════
-
-const SQL_KEYWORDS = new Set([
-  'select','from','where','join','inner','left','right','full','outer','cross',
-  'on','as','and','or','not','in','exists','between','like','is','null','true',
-  'false','case','when','then','else','end','group','by','order','having',
-  'limit','offset','union','all','distinct','with','recursive','lateral',
-  'insert','update','delete','into','values','set','create','materialized',
-  'view','replace','table','temp','temporary','if','using','over','partition',
-  'filter','rows','range','preceding','following','current','row',
-]);
-
-const SCHEMA_PALETTE = [
-  '#58a6ff','#3fb950','#d29922','#f85149','#bc8cff',
-  '#39d0d8','#f0883e','#db61a2','#85e89d','#ffea7f',
-];
-const schemaColorCache = { public: '#58a6ff' };
-let paletteIdx = 1;
-
-function schemaColor(schema) {
-  if (!schema) return '#58a6ff';
-  if (schemaColorCache[schema]) return schemaColorCache[schema];
-  schemaColorCache[schema] = SCHEMA_PALETTE[paletteIdx % SCHEMA_PALETTE.length];
-  paletteIdx++;
-  return schemaColorCache[schema];
-}
 
 const JOIN_COLORS  = { INNER:'#94a3b8', LEFT:'#3fb950', RIGHT:'#d29922', FULL:'#bc8cff', CROSS:'#f85149', UNION:'#39d0d8' };
 const CTE_COLOR    = '#a78bfa';
@@ -372,10 +42,6 @@ function cteBoxSize(cte) {
 // ═══════════════════════════════════════════════════════════════
 // SQL PARSING
 // ═══════════════════════════════════════════════════════════════
-
-// Regex factory — returns a fresh regex each call to reset lastIndex
-const FROM_JOIN_RE = () =>
-  /\b(FROM|((?:LEFT|RIGHT|INNER|FULL|CROSS)\s+(?:OUTER\s+)?)?JOIN)\s+([`"\[]?[\w]+[`"\]]?(?:\.[`"\[]?[\w]+[`"\]]?)*)/gi;
 
 function parseSQL(sql) {
   if (!sql || !sql.trim()) return { tableNodes: [], cteNodes: [], edges: [] };
@@ -425,8 +91,6 @@ function parseSQL(sql) {
   }
 
   // ── 4. Pre-compute paren depth at each position ──
-  // depth[i] = nesting depth when entering character i.
-  // CTE body content is at depth ≥ 1; inline subqueries are also ≥ 1.
   const depthAt = new Array(sql.length).fill(0);
   { let d = 0;
     for (let i = 0; i < sql.length; i++) {
@@ -440,9 +104,6 @@ function parseSQL(sql) {
     return cteBodyRanges.some(r => idx >= r.start && idx <= r.end);
   }
 
-  // Collect main query tokens with their paren depth.
-  // depth 0  → main SELECT / UNION branch
-  // depth 1+ → inline subquery or CTE body (CTE bodies excluded via inCTEBody)
   const mainTokens = [];
   for (const m of sql.matchAll(FROM_JOIN_RE())) {
     if (inCTEBody(m.index)) continue;
@@ -482,9 +143,6 @@ function parseSQL(sql) {
 
   // ── 6. Build main query edges (FROM-as-hub) ─
   const edgesMap = new Map();
-  // fromToken / pseudoHub track the depth-0 hub.
-  // lastJoinType remembers the most recent depth-0 JOIN type so that
-  // subquery tables (depth 1) inherit the correct edge colour/label.
   let fromToken = null, pseudoHub = null, lastJoinType = 'INNER';
 
   function getNode(name) { return tableNodesMap.get(name) || cteNodesMap.get(name); }
@@ -505,7 +163,6 @@ function parseSQL(sql) {
     if (!getNode(token.name)) continue;
 
     if (token.depth === 0) {
-      // ── Main query level ──────────────────────
       if (token.type === 'FROM') {
         fromToken = token; pseudoHub = null; lastJoinType = 'INNER';
       } else {
@@ -515,19 +172,12 @@ function parseSQL(sql) {
         if (!fromToken && !pseudoHub) pseudoHub = token;
       }
     } else if (token.depth === 1 && token.type === 'FROM' && !token.isCTE) {
-      // ── Direct inline subquery (e.g. LEFT JOIN (SELECT … FROM t) alias) ─
-      // Connect the subquery's inner table to the current depth-0 hub,
-      // using the JOIN type of the surrounding depth-0 clause.
       const hub = fromToken || pseudoHub;
       if (hub) addEdge(token.name, hub.name, lastJoinType);
     }
-    // JOINs inside subqueries (depth ≥ 1) are intentionally skipped —
-    // they are internal to the subquery and shown inside CTE boxes or ignored.
   }
 
   // ── 7. UNION / UNION ALL edges ───────────────
-  // For each UNION keyword at depth 0, find the last FROM hub before it
-  // and the first FROM hub after it, then draw a dashed UNION edge.
   for (const m of sql.matchAll(/\bUNION\b/gi)) {
     if (inCTEBody(m.index) || depthAt[m.index] !== 0) continue;
     const upos = m.index;
@@ -776,7 +426,7 @@ function render(data) {
         .attr('text-anchor', 'start').attr('dominant-baseline', 'middle')
         .attr('fill', '#444444').attr('font-size', '10px')
         .attr('font-family', "'SF Mono',monospace")
-        .text('▸ ' + tname);
+        .text('\u25b8 ' + tname);
     });
   });
 
@@ -869,11 +519,11 @@ function updateSidebar(data) {
     div.className = 'cte-item';
     div.innerHTML = `
       <div class="cte-item-header">
-        ⬡ ${cte.label}
+        \u2b21 ${cte.label}
         <span class="cte-badge">${cte.tables.length} table${cte.tables.length !== 1 ? 's' : ''}</span>
       </div>
       <div class="cte-item-tables">
-        ${cte.tables.map(t => `<div class="cte-item-table">▸ ${t}</div>`).join('')}
+        ${cte.tables.map(t => `<div class="cte-item-table">\u25b8 ${t}</div>`).join('')}
       </div>`;
     cteListEl.appendChild(div);
   });
@@ -956,7 +606,7 @@ document.getElementById('clear-btn').addEventListener('click', () => {
 });
 window.addEventListener('resize', () => { if (document.getElementById('sql-input').value.trim()) analyze(); });
 
-// ── URL hash loading: project_overview opens this page with base64 SQL ──
+// ── URL hash loading: project page opens this page with base64 SQL ──
 window.addEventListener('load', () => {
   const hash = location.hash.slice(1);
   if (!hash) return;
@@ -968,6 +618,3 @@ window.addEventListener('load', () => {
     console.warn('Could not decode hash payload:', e);
   }
 });
-</script>
-</body>
-</html>

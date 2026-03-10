@@ -97,7 +97,8 @@ table-deps "SELECT * FROM orders" --verbose
 
 ## SQL Visualizer UI
 
-Visualise the dependencies inside a **single SQL query** as an interactive force-directed graph:
+Visualise the dependencies inside a **single SQL query** as an interactive force-directed graph.
+Starts a local HTTP server at `http://127.0.0.1:7654` and opens the browser automatically:
 
 ```bash
 uv run table-deps ui
@@ -131,7 +132,8 @@ The `ui_examples/` folder contains four ready-to-paste queries:
 
 ## Project DAG UI
 
-Scan a directory of SQL files and visualise the **entire project's cross-file dependency graph**:
+Scan a directory of SQL files and visualise the **entire project's cross-file dependency graph**.
+Starts a local HTTP server, scans the project, and opens the browser automatically:
 
 ```bash
 uv run table-deps project-ui /path/to/your/project
@@ -152,7 +154,8 @@ Files must follow the `schema.table_name.sql` naming convention. Each file becom
 - **★ Example** button — loads the Kimball retail project instantly (no folder needed)
 - Zoom · Pan · Fit-to-view · Reset layout controls
 - Sidebar: project stats, table list sorted by DAG level, schema colour legend
-- Works via CLI (hash injection) **or** browser folder picker / drag-and-drop
+- Served via a local HTTP server at `http://127.0.0.1:7654` — no `file://` limitations
+- Browser folder picker still available for ad-hoc use without the CLI
 
 ### Naming Convention
 
@@ -212,9 +215,21 @@ table_deps/
 │   ├── extractor.py         # Core regex parsing logic
 │   ├── cli.py               # CLI — ui and project-ui subcommands
 │   ├── project_scanner.py   # Directory scanner: builds cross-file dep graph
-│   └── static/
-│       ├── index.html             # SQL Visualizer (table-deps ui)
-│       └── project_overview.html  # Project DAG UI (table-deps project-ui)
+│   └── frontend_service/    # Local HTTP server + split CSS/JS/HTML templates
+│       ├── server.py              # stdlib HTTP server (no external deps)
+│       ├── templates/
+│       │   ├── visualizer.html    # SQL Visualizer page
+│       │   └── project.html       # Project DAG page
+│       └── static/
+│           ├── css/
+│           │   ├── shared.css     # Shared variables, layout, sidebar, controls
+│           │   ├── visualizer.css # Visualizer-specific styles
+│           │   └── project.css    # Project DAG-specific styles
+│           └── js/
+│               ├── colors.js      # Schema colour palette (shared)
+│               ├── sql_parser.js  # SQL_KEYWORDS + FROM_JOIN_RE (shared)
+│               ├── visualizer.js  # D3 SQL visualizer app
+│               └── project.js     # D3 project DAG app
 ├── tests/
 │   ├── test_extractor.py    # 36 parser tests
 │   └── test_cli.py          # 8 CLI tests

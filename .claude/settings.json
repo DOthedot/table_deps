@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(uv run python -c \"from table_deps.frontend_service import start_server; print\\(''Import OK''\\)\")",
+      "Bash(uv run pytest tests/ -q)",
+      "Read(//Users/dhananjayojha/Documents/projects/de_projects/table_deps/**)",
+      "Bash(python3 -m py_compile /Users/dhananjayojha/Documents/projects/de_projects/table_deps/table_deps/cli.py /Users/dhananjayojha/Documents/projects/de_projects/table_deps/table_deps/frontend_service/server.py /Users/dhananjayojha/Documents/projects/de_projects/table_deps/table_deps/project_scanner.py)",
+      "Bash(node -c table_deps/frontend_service/static/js/colors.js)",
+      "Bash(node -c table_deps/frontend_service/static/js/sql_parser.js)",
+      "Bash(node -c table_deps/frontend_service/static/js/visualizer.js)",
+      "Bash(node -c table_deps/frontend_service/static/js/project.js)",
+      "Bash(for f in table_deps/frontend_service/static/css/*.css)",
+      "Bash(do if grep -q '^\\\\s*$' \"$f\")",
+      "Bash(then echo \"$f: OK\")",
+      "Bash(fi)",
+      "Bash(done)"
+    ]
+  }
+}
