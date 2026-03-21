@@ -114,7 +114,10 @@ uv run table-deps ui
 
 - Force-directed graph — nodes are draggable, canvas is zoomable and pannable
 - Schema-based colour coding (`public`, `analytics`, `hr`, `finance`, …)
-- **CTE boxes** — each CTE rendered as a named box listing its internal tables
+- **Table boxes** — each table rendered as a named box (matching the Project DAG style) with `schema.` prefix dimmed and table name highlighted; lists every column referenced in the query (SELECT, JOIN, WHERE, GROUP BY) as dot-prefixed rows
+- **Column-level edge routing** — arrows exit from the exact column row used in the JOIN condition, making join keys immediately visible
+- **Subquery column extraction** — tables inside inline subqueries (`JOIN (...) alias`) expose their full SELECT column list, not just join keys
+- **CTE boxes** — each CTE rendered as a named box; internal tables appear as mini table-boxes with their own column lists and schema colours
 - Edge arrows show data flow direction; edge labels show JOIN type (INNER, LEFT, RIGHT, FULL, CROSS)
 - **UNION / UNION ALL** branches connected by dashed cyan edges
 - Sidebar: table list, CTE list, stats, schema legend, join-type legend
