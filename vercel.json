@@ -1,6 +1,12 @@
 {
-  "rewrites": [
-    { "source": "/visualizer", "destination": "/index.html" },
-    { "source": "/project",    "destination": "/project.html" }
+  "version": 2,
+  "builds": [
+    { "src": "public/**", "use": "@vercel/static" }
+  ],
+  "routes": [
+    { "src": "/static/(.*)",  "dest": "/public/static/$1" },
+    { "src": "/visualizer",   "dest": "/public/index.html" },
+    { "src": "/project",      "dest": "/public/project.html" },
+    { "src": "/",             "dest": "/public/index.html" }
   ]
 }
