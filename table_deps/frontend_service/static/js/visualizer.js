@@ -5,7 +5,7 @@
 // ═══════════════════════════════════════════════════════════════
 
 const JOIN_COLORS = {
-  INNER: '#94a3b8', LEFT: '#3fb950', RIGHT: '#d29922',
+  INNER: '#94a3b8', LEFT: '#3fb950', RIGHT: '#f97316',
   FULL:  '#bc8cff', CROSS: '#f85149', UNION: '#39d0d8',
 };
 const CTE_COLOR = '#a78bfa';
@@ -200,9 +200,31 @@ function parseSQL(raw) {
       if (!list.includes(col)) list.push(col);
     }
 
+    // Wire sourceCol/targetCol on internal edges from ON conditions in the CTE body
+    const internalEdges = buildInternalEdges(tokens);
+    const cteJoinColMap = new Map();
+    for (const m of body.matchAll(/\b([\w]+)\.([\w]+)\s*=\s*([\w]+)\.([\w]+)/gi)) {
+      const t1 = cteAliasMap.get(normName(m[1])) || normName(m[1]), c1 = normName(m[2]);
+      const t2 = cteAliasMap.get(normName(m[3])) || normName(m[3]), c2 = normName(m[4]);
+      if (!cteJoinColMap.has(t1)) cteJoinColMap.set(t1, []);
+      if (!cteJoinColMap.has(t2)) cteJoinColMap.set(t2, []);
+      cteJoinColMap.get(t1).push({ col: c1, peer: t2, peerCol: c2 });
+      cteJoinColMap.get(t2).push({ col: c2, peer: t1, peerCol: c1 });
+    }
+    for (const edge of internalEdges) {
+      const srcConds = cteJoinColMap.get(edge.source) || [];
+      const tgtConds = cteJoinColMap.get(edge.target) || [];
+      const direct = srcConds.find(c => c.peer === edge.target);
+      if (direct) { edge.sourceCol = direct.col; edge.targetCol = direct.peerCol; }
+      else {
+        if (srcConds.length) edge.sourceCol = srcConds[0].col;
+        if (tgtConds.length) edge.targetCol = tgtConds[0].col;
+      }
+    }
+
     cteBodyData.set(name, {
       tables:        [...new Set(tokens.map(t => t.name))],
-      internalEdges: buildInternalEdges(tokens),
+      internalEdges,
       tableColumns:  tableColumnsInCTE,
     });
   }
@@ -656,6 +678,7 @@ function render(data) {
     const miniLinks = (d.internalEdges || []).map(e => ({
       source: e.source, target: e.target, type: e.type,
       color: JOIN_COLORS[e.type] || JOIN_COLORS.INNER,
+      sourceCol: e.sourceCol || null, targetCol: e.targetCol || null,
     }));
 
     // Clamp helper — keeps node fully inside inner bounds
@@ -688,6 +711,16 @@ function render(data) {
       .attr('class', 'link-label')
       .attr('font-size', '7px').attr('fill', '#999999')
       .text(lk => lk.type);
+
+    const miniSrcColLabels = innerG.append('g').selectAll('text')
+      .data(miniLinks.filter(lk => lk.sourceCol)).join('text')
+      .attr('class', 'col-endpoint-label').attr('font-size', '7px')
+      .text(lk => lk.sourceCol);
+
+    const miniTgtColLabels = innerG.append('g').selectAll('text')
+      .data(miniLinks.filter(lk => lk.targetCol)).join('text')
+      .attr('class', 'col-endpoint-label').attr('font-size', '7px')
+      .text(lk => lk.targetCol);
 
     // ── Draw nodes (updatable) ──
     const miniNodeEls = innerG.append('g').selectAll('g').data(miniNodes).join('g')
@@ -756,6 +789,12 @@ function render(data) {
       miniLinkLabels
         .attr('x', lk => lk._mp1 ? Math.round((lk._mp1.x + lk._mp2.x) / 2) : 0)
         .attr('y', lk => lk._mp1 ? Math.round((lk._mp1.y + lk._mp2.y) / 2) - 4 : 0);
+      miniSrcColLabels
+        .attr('x', lk => lk._mp1 ? Math.round(lk._mp1.x + (lk._mp2.x - lk._mp1.x) * 0.2) : 0)
+        .attr('y', lk => lk._mp1 ? Math.round(lk._mp1.y + (lk._mp2.y - lk._mp1.y) * 0.2) - 5 : 0);
+      miniTgtColLabels
+        .attr('x', lk => lk._mp1 ? Math.round(lk._mp1.x + (lk._mp2.x - lk._mp1.x) * 0.8) : 0)
+        .attr('y', lk => lk._mp1 ? Math.round(lk._mp1.y + (lk._mp2.y - lk._mp1.y) * 0.8) - 5 : 0);
     }
 
     // Set initial positions (rounded to avoid sub-pixel blur)
