@@ -1,7 +1,7 @@
 -- Source: raw customer records from CRM
 CREATE OR REPLACE TABLE src.raw_customers AS
 SELECT
-    customer_id, first_name, last_name, email, phone,
-    address, city, state, zip, country,
-    gender, birth_date, signup_date, loyalty_tier, _loaded_at
-FROM external.crm_db.customers;
+    c.customer_id, c.first_name, c.last_name, c.email, c.phone,
+    c.address, c.city, c.state, c.zip, c.country,
+    c.gender, c.birth_date, c.signup_date, c.loyalty_tier, c._loaded_at
+FROM external.crm_db.customers c;

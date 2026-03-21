@@ -3,20 +3,20 @@
 CREATE OR REPLACE TABLE mart.customer_ltv AS
 WITH monthly_spend AS (
     SELECT
-        customer_id,
-        DATE_TRUNC('month', transaction_date) AS month,
-        SUM(net_revenue)                      AS monthly_revenue
-    FROM staging.sales_cleaned
-    GROUP BY 1, 2
+        sc.customer_id,
+        DATE_TRUNC('month', sc.transaction_date) AS month,
+        SUM(sc.net_revenue)                      AS monthly_revenue
+    FROM staging.sales_cleaned sc
+    GROUP BY sc.customer_id, DATE_TRUNC('month', sc.transaction_date)
 ),
 avg_monthly AS (
     SELECT
-        customer_id,
-        AVG(monthly_revenue)         AS avg_monthly_revenue,
-        STDDEV(monthly_revenue)      AS stddev_monthly_revenue,
-        COUNT(DISTINCT month)        AS active_months
-    FROM monthly_spend
-    GROUP BY customer_id
+        ms.customer_id,
+        AVG(ms.monthly_revenue)         AS avg_monthly_revenue,
+        STDDEV(ms.monthly_revenue)      AS stddev_monthly_revenue,
+        COUNT(DISTINCT ms.month)        AS active_months
+    FROM monthly_spend ms
+    GROUP BY ms.customer_id
 )
 SELECT
     cs.customer_id,

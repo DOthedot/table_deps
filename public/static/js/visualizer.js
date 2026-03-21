@@ -200,6 +200,51 @@ function parseSQL(raw) {
       if (!list.includes(col)) list.push(col);
     }
 
+    // For single-FROM-table CTE bodies, also capture bare SELECT column names
+    {
+      const hasJoin = /\bJOIN\b/i.test(body);
+      if (!hasJoin) {
+        const fmMatch = body.match(/\bFROM\s+([\w.`"\[\]]+)/i);
+        if (fmMatch) {
+          const singleT = cteAliasMap.get(normName(fmMatch[1])) || normName(fmMatch[1]);
+          // Find SELECT…FROM in the body
+          const upBody = body.toUpperCase();
+          let si = -1, fi = -1, dep = 0;
+          for (let i = 0; i < body.length; i++) {
+            if (body[i] === '(') { dep++; continue; }
+            if (body[i] === ')') { dep--; continue; }
+            if (dep !== 0) continue;
+            const bef = i === 0 || /\W/.test(body[i-1]);
+            if (si === -1 && upBody.slice(i,i+6) === 'SELECT' && bef && /\s/.test(body[i+6]||' ')) { si = i+6; continue; }
+            if (si !== -1 && upBody.slice(i,i+4) === 'FROM'   && bef && /\W/.test(body[i+4]||' ')) { fi = i; break; }
+          }
+          if (si >= 0 && fi >= 0) {
+            const clause = body.slice(si, fi);
+            const items = []; let cur2 = '', d2 = 0;
+            for (const ch of clause) {
+              if (ch === '(') { d2++; cur2 += ch; }
+              else if (ch === ')') { d2--; cur2 += ch; }
+              else if (ch === ',' && d2 === 0) { items.push(cur2.trim()); cur2 = ''; }
+              else cur2 += ch;
+            }
+            if (cur2.trim()) items.push(cur2.trim());
+            if (!tableColumnsInCTE.has(singleT)) tableColumnsInCTE.set(singleT, []);
+            const list = tableColumnsInCTE.get(singleT);
+            for (const part of items) {
+              if (!part) continue;
+              // AS alias → use alias as col name; else take last identifier
+              const asM2 = part.match(/\bAS\s+([`"\[]?\w+[`"\]]?)\s*$/i);
+              const colN = asM2
+                ? normName(asM2[1])
+                : (() => { const pm = part.match(/([`"\[]?\w+[`"\]]?)\s*$/); return pm ? normName(pm[1]) : null; })();
+              if (colN && !SQL_KEYWORDS.has(colN) && colN !== '*' && !list.includes(colN))
+                list.push(colN);
+            }
+          }
+        }
+      }
+    }
+
     // Wire sourceCol/targetCol on internal edges from ON conditions in the CTE body
     const internalEdges = buildInternalEdges(tokens);
     const cteJoinColMap = new Map();
@@ -675,6 +720,15 @@ function render(data) {
       };
     });
 
+    // Single-node CTE: expand node to fill the inner box
+    if (miniNodes.length === 1) {
+      const sp = 16;
+      miniNodes[0].mw = Math.max(miniNodes[0].mw, innerW - sp * 2);
+      miniNodes[0].mh = Math.max(miniNodes[0].mh, innerH - sp * 2);
+      miniNodes[0].x  = cx;
+      miniNodes[0].y  = cy;
+    }
+
     const miniLinks = (d.internalEdges || []).map(e => ({
       source: e.source, target: e.target, type: e.type,
       color: JOIN_COLORS[e.type] || JOIN_COLORS.INNER,
@@ -689,12 +743,12 @@ function render(data) {
 
     const miniSim = d3.forceSimulation(miniNodes)
       .force('link', d3.forceLink(miniLinks).id(n => n.id)
-        .distance(Math.min(innerW, innerH) * 0.4).strength(0.5))
-      .force('charge', d3.forceManyBody().strength(-200))
+        .distance(Math.min(innerW, innerH) * 0.85).strength(0.3))
+      .force('charge', d3.forceManyBody().strength(-1200))
       .force('center', d3.forceCenter(cx, cy))
-      .force('collision', d3.forceCollide().radius(n => Math.sqrt(n.mw * n.mw + n.mh * n.mh) / 2 + 10))
-      .force('x', d3.forceX(cx).strength(0.06))
-      .force('y', d3.forceY(cy).strength(0.06))
+      .force('collision', d3.forceCollide().radius(n => Math.sqrt(n.mw * n.mw + n.mh * n.mh) / 2 + 18).strength(1))
+      .force('x', d3.forceX(cx).strength(0.02))
+      .force('y', d3.forceY(cy).strength(0.02))
       .stop();
 
     // Pre-settle layout
@@ -1004,12 +1058,11 @@ window.addEventListener('resize', () => {
   if (document.getElementById('sql-input').value.trim()) analyze();
 });
 
-// URL hash: project page opens visualizer with base64 SQL
+// Project page opens visualizer by writing SQL to localStorage
 window.addEventListener('load', () => {
-  const hash = location.hash.slice(1);
-  if (!hash) return;
-  try {
-    document.getElementById('sql-input').value = atob(hash);
-    analyze();
-  } catch (e) { console.warn('Could not decode hash payload:', e); }
+  const sql = localStorage.getItem('table_deps_viz_sql');
+  if (!sql) return;
+  localStorage.removeItem('table_deps_viz_sql');
+  document.getElementById('sql-input').value = sql;
+  analyze();
 });

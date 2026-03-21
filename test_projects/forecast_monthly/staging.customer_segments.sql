@@ -3,12 +3,12 @@
 CREATE OR REPLACE TABLE staging.customer_segments AS
 WITH customer_revenue AS (
     SELECT
-        customer_id,
-        COUNT(DISTINCT transaction_id) AS total_orders,
-        SUM(net_revenue)               AS total_revenue,
-        MAX(transaction_date)          AS last_purchase_date
-    FROM staging.sales_cleaned
-    GROUP BY customer_id
+        sc.customer_id,
+        COUNT(DISTINCT sc.transaction_id) AS total_orders,
+        SUM(sc.net_revenue)               AS total_revenue,
+        MAX(sc.transaction_date)          AS last_purchase_date
+    FROM staging.sales_cleaned sc
+    GROUP BY sc.customer_id
 )
 SELECT
     c.customer_id,

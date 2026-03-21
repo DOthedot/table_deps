@@ -3,31 +3,31 @@
 CREATE OR REPLACE TABLE gold.forecast_monthly AS
 WITH trailing_12 AS (
     SELECT
-        fiscal_year,
-        fiscal_month,
-        region,
-        channel,
-        category,
-        total_revenue,
-        LAG(total_revenue, 12) OVER (
-            PARTITION BY region, channel, category
-            ORDER BY fiscal_year, fiscal_month
+        ms.fiscal_year,
+        ms.fiscal_month,
+        ms.region,
+        ms.channel,
+        ms.category,
+        ms.total_revenue,
+        LAG(ms.total_revenue, 12) OVER (
+            PARTITION BY ms.region, ms.channel, ms.category
+            ORDER BY ms.fiscal_year, ms.fiscal_month
         ) AS revenue_same_period_last_year,
-        AVG(total_revenue) OVER (
-            PARTITION BY region, channel, category
-            ORDER BY fiscal_year, fiscal_month
+        AVG(ms.total_revenue) OVER (
+            PARTITION BY ms.region, ms.channel, ms.category
+            ORDER BY ms.fiscal_year, ms.fiscal_month
             ROWS BETWEEN 11 PRECEDING AND CURRENT ROW
         ) AS rolling_12m_avg
-    FROM mart.monthly_sales
+    FROM mart.monthly_sales ms
 ),
 ltv_signal AS (
     SELECT
-        region,
-        AVG(projected_ltv_3yr) AS avg_customer_ltv,
-        COUNT(customer_id)     AS active_customers
-    FROM mart.customer_ltv
-    WHERE last_purchase_date >= CURRENT_DATE - INTERVAL '90 days'
-    GROUP BY region
+        cl.region,
+        AVG(cl.projected_ltv_3yr) AS avg_customer_ltv,
+        COUNT(cl.customer_id)     AS active_customers
+    FROM mart.customer_ltv cl
+    WHERE cl.last_purchase_date >= CURRENT_DATE - INTERVAL '90 days'
+    GROUP BY cl.region
 )
 SELECT
     t.fiscal_year,

@@ -24,7 +24,7 @@ WITH
         JOIN product.features f ON e.feature_id = f.feature_id
         WHERE e.event_type = 'feature_use'
           AND e.occurred_at < (
-              SELECT MIN(occurred_at) + INTERVAL '1 day'
+              SELECT MIN(ie.occurred_at) + INTERVAL '1 day'
               FROM events.user_events ie
               WHERE ie.user_id = e.user_id
           )

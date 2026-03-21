@@ -18,7 +18,16 @@
       "Bash(cp /Users/dhananjayojha/Documents/projects/de_projects/table_deps/table_deps/frontend_service/static/css/*.css /Users/dhananjayojha/Documents/projects/de_projects/table_deps/public/static/css/)",
       "Bash(cp /Users/dhananjayojha/Documents/projects/de_projects/table_deps/table_deps/frontend_service/static/js/*.js /Users/dhananjayojha/Documents/projects/de_projects/table_deps/public/static/js/)",
       "Bash(cp /Users/dhananjayojha/Documents/projects/de_projects/table_deps/table_deps/frontend_service/templates/visualizer.html /Users/dhananjayojha/Documents/projects/de_projects/table_deps/public/index.html)",
-      "Bash(cp /Users/dhananjayojha/Documents/projects/de_projects/table_deps/table_deps/frontend_service/templates/project.html /Users/dhananjayojha/Documents/projects/de_projects/table_deps/public/project.html)"
+      "Bash(cp /Users/dhananjayojha/Documents/projects/de_projects/table_deps/table_deps/frontend_service/templates/project.html /Users/dhananjayojha/Documents/projects/de_projects/table_deps/public/project.html)",
+      "Bash(for f:*)",
+      "Bash(do echo:*)",
+      "Bash(sed -i '' '920,921s/.*//' /Users/dhananjayojha/Documents/projects/de_projects/table_deps/table_deps/frontend_service/static/js/project.js)",
+      "Bash(sed -n '918,924p' /Users/dhananjayojha/Documents/projects/de_projects/table_deps/table_deps/frontend_service/static/js/project.js)",
+      "Bash(grep -n \"^$\" /Users/dhananjayojha/Documents/projects/de_projects/table_deps/table_deps/frontend_service/static/js/project.js)",
+      "Bash(sed -i '' '922d' /Users/dhananjayojha/Documents/projects/de_projects/table_deps/table_deps/frontend_service/static/js/project.js)",
+      "Bash(sed -n '917,925p' /Users/dhananjayojha/Documents/projects/de_projects/table_deps/table_deps/frontend_service/static/js/project.js)",
+      "Bash(sed -i '' 's|<script src=\"\"/static/js/project.js\"\"></script>|<script src=\"\"/static/js/kimball_example.js\"\"></script>\\\\n<script src=\"\"/static/js/project.js\"\"></script>|' /Users/dhananjayojha/Documents/projects/de_projects/table_deps/table_deps/frontend_service/templates/project.html)",
+      "Bash(sed -i '' 's|<script src=\"\"/static/js/project.js\"\"></script>|<script src=\"\"/static/js/kimball_example.js\"\"></script>\\\\n<script src=\"\"/static/js/project.js\"\"></script>|' /Users/dhananjayojha/Documents/projects/de_projects/table_deps/public/project.html)"
     ],
     "additionalDirectories": [
       "/Users/dhananjayojha/Documents/projects/de_projects/table_deps/public"

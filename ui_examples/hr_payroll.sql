@@ -30,13 +30,13 @@ WITH
     ),
     leave_summary AS (
         SELECT
-            employee_id,
-            SUM(CASE WHEN leave_type = 'annual'  THEN days_taken ELSE 0 END) AS annual_taken,
-            SUM(CASE WHEN leave_type = 'sick'    THEN days_taken ELSE 0 END) AS sick_taken,
-            SUM(CASE WHEN leave_type = 'unpaid'  THEN days_taken ELSE 0 END) AS unpaid_taken
-        FROM hr.leave_records
-        WHERE EXTRACT(YEAR FROM start_date) = EXTRACT(YEAR FROM CURRENT_DATE)
-        GROUP BY employee_id
+            lr.employee_id,
+            SUM(CASE WHEN lr.leave_type = 'annual'  THEN lr.days_taken ELSE 0 END) AS annual_taken,
+            SUM(CASE WHEN lr.leave_type = 'sick'    THEN lr.days_taken ELSE 0 END) AS sick_taken,
+            SUM(CASE WHEN lr.leave_type = 'unpaid'  THEN lr.days_taken ELSE 0 END) AS unpaid_taken
+        FROM hr.leave_records lr
+        WHERE EXTRACT(YEAR FROM lr.start_date) = EXTRACT(YEAR FROM CURRENT_DATE)
+        GROUP BY lr.employee_id
     )
 SELECT
     ot.employee_id,

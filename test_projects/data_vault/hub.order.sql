@@ -2,9 +2,9 @@
 -- Deps: raw.orders
 CREATE OR REPLACE TABLE hub.order AS
 SELECT
-    MD5(order_id)           AS hub_order_hk,
-    order_id                AS bk_order_id,
+    MD5(ro.order_id)        AS hub_order_hk,
+    ro.order_id             AS bk_order_id,
     'OMS'                   AS record_source,
-    MIN(_loaded_at)         AS load_dts
-FROM raw.orders
-GROUP BY 1, 2, 3;
+    MIN(ro._loaded_at)      AS load_dts
+FROM raw.orders ro
+GROUP BY ro.order_id;

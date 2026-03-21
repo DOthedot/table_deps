@@ -29,8 +29,8 @@
         <div class="dz-hint">Click to browse or drop a folder</div>
       </div>
       <div class="btn-row">
-        <button id="open-btn">&#9654; Open Folder</button>
-        <button id="example-btn" title="Load Kimball Retail example">&#9733; Example</button>
+        <button id="open-btn">&#9654; Open</button>
+        <button id="example-btn" title="Load Kimball Retail example">Example</button>
         <button id="clear-btn" title="Clear">&#x2715;</button>
       </div>
       <div id="compat-warn">
@@ -87,6 +87,17 @@
       <div class="tt-row"><span>DAG level</span><span class="tt-val" id="tt-lv">&mdash;</span></div>
       <div style="margin-top:8px;font-size:10px;color:var(--muted);border-top:1px solid var(--border);padding-top:6px">Double-click to open in visualizer</div>
     </div>
+    <div id="search-box">
+      <div id="search-wrap">
+        <input id="search-input" type="text" placeholder="Search table / column…" autocomplete="off">
+        <span id="search-count"></span>
+      </div>
+      <div id="search-nav">
+        <div class="ctrl-btn" id="search-prev" title="Previous match">&#8593;</div>
+        <div class="ctrl-btn" id="search-next" title="Next match">&#8595;</div>
+        <div class="ctrl-btn" id="search-clear" title="Clear search">&#x2715;</div>
+      </div>
+    </div>
     <div id="graph-controls">
       <div class="ctrl-btn" id="zoom-in"  title="Zoom in">+</div>
       <div class="ctrl-btn" id="zoom-out" title="Zoom out">&minus;</div>
@@ -99,6 +110,7 @@
 <script src="https://d3js.org/d3.v7.min.js"></script>
 <script src="/static/js/colors.js"></script>
 <script src="/static/js/sql_parser.js"></script>
+<script src="/static/js/kimball_example.js"></script>
 <script src="/static/js/project.js"></script>
 </body>
 </html>

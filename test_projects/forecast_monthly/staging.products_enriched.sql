@@ -3,13 +3,13 @@
 CREATE OR REPLACE TABLE staging.products_enriched AS
 WITH product_sales AS (
     SELECT
-        product_id,
-        SUM(quantity)    AS total_units_sold,
-        SUM(net_revenue) AS total_revenue,
-        SUM(cogs)        AS total_cogs,
-        COUNT(DISTINCT transaction_id) AS num_transactions
-    FROM staging.sales_cleaned
-    GROUP BY product_id
+        sc.product_id,
+        SUM(sc.quantity)    AS total_units_sold,
+        SUM(sc.net_revenue) AS total_revenue,
+        SUM(sc.cogs)        AS total_cogs,
+        COUNT(DISTINCT sc.transaction_id) AS num_transactions
+    FROM staging.sales_cleaned sc
+    GROUP BY sc.product_id
 )
 SELECT
     p.product_id,

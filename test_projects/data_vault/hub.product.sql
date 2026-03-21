@@ -2,9 +2,9 @@
 -- Deps: raw.products
 CREATE OR REPLACE TABLE hub.product AS
 SELECT
-    MD5(product_id)         AS hub_product_hk,
-    product_id              AS bk_product_id,
+    MD5(rp.product_id)      AS hub_product_hk,
+    rp.product_id           AS bk_product_id,
     'PIM'                   AS record_source,
-    MIN(_loaded_at)         AS load_dts
-FROM raw.products
-GROUP BY 1, 2, 3;
+    MIN(rp._loaded_at)      AS load_dts
+FROM raw.products rp
+GROUP BY rp.product_id;
