@@ -49,6 +49,11 @@ textarea#sql-input:focus { border-color: var(--accent); }
   fill: #333333; text-anchor: middle; dominant-baseline: middle;
   pointer-events: none; user-select: none;
 }
+.col-endpoint-label {
+  font-size: 8px; font-family: 'SF Mono',monospace; font-weight: 600;
+  fill: #555555; text-anchor: middle; dominant-baseline: middle;
+  pointer-events: none; user-select: none; opacity: 0.85;
+}
 .table-node text { pointer-events: none; user-select: none; }
 .cte-node { cursor: grab; }
 .cte-node:active { cursor: grabbing; }

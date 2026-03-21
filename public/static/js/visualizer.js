@@ -51,23 +51,29 @@ function miniBoxH(cols) {
   return MINI_HDR + (cols.length > 0 ? MINI_PAD + cols.length * MINI_ROW + MINI_PAD : MINI_PAD);
 }
 
-// CTE box — sized to contain mini table-boxes
+// CTE box — sized to contain inner mini-graph without overlap
 function cteSize(node) {
   const tableColumns = node.tableColumns || new Map();
-  // width: fit CTE label AND longest table.col text inside mini boxes
-  let maxLen = node.label.length;
+  // Estimate widest mini-node (tbl chars * ~6.2 + padding, also accounting for columns)
+  let maxNodeW = 90;
   for (const t of node.tables) {
-    maxLen = Math.max(maxLen, t.length + 2);
-    for (const col of (tableColumns.get(t) || []))
-      maxLen = Math.max(maxLen, col.length + 3);
+    const tbl = t.split('.').at(-1);
+    const cols = tableColumns.get(t) || [];
+    const longestCol = cols.length ? Math.max(...cols.map(c => c.length)) : 0;
+    maxNodeW = Math.max(maxNodeW, tbl.length * 6.2 + 16, longestCol * 6.2 + 30);
   }
-  const w = Math.min(MAX_W, Math.max(CTE_MIN_W, Math.min(maxLen, 30) * 6.9 + PAD_H * 2));
-  // height: CTE header + padding + stacked mini-boxes with gaps
-  const innerH = node.tables.reduce((sum, t, i) => {
-    return sum + miniBoxH((tableColumns.get(t) || [])) + (i > 0 ? MINI_GAP : 0);
-  }, 0);
-  const h = CTE_HDR_H + CTE_PAD_B + innerH + CTE_PAD_B;
-  return { w, h };
+  // Estimate tallest mini-node
+  let maxNodeH = MINI_HDR + MINI_PAD * 2;
+  for (const t of node.tables) {
+    const cols = tableColumns.get(t) || [];
+    maxNodeH = Math.max(maxNodeH, MINI_HDR + (cols.length ? MINI_PAD + cols.length * MINI_ROW + MINI_PAD : MINI_PAD));
+  }
+  const n = node.tables.length;
+  const cols = Math.ceil(Math.sqrt(n));
+  const rows = Math.ceil(n / cols);
+  const innerW = Math.max(260, cols * (maxNodeW + 60));
+  const innerH = Math.max(200, rows * (maxNodeH + 60));
+  return { w: innerW + 20, h: CTE_HDR_H + innerH + 15 };
 }
 
 // Absolute y of a column row's centre, relative to node centre
@@ -313,13 +319,28 @@ function parseSQL(raw) {
   }
 
   // 12 ── wire sourceCol / targetCol on edges from equality join conditions
+  // Build per-table join-col map: table → [{col, peer, peerCol}]
+  const joinColMap = new Map();
   for (const m of sql.matchAll(/\b([\w]+)\.([\w]+)\s*=\s*([\w]+)\.([\w]+)/gi)) {
     const t1 = resolve(normName(m[1])), c1 = normName(m[2]);
     const t2 = resolve(normName(m[3])), c2 = normName(m[4]);
-    for (const edge of edgeMap.values()) {
-      if (edge.sourceCol) continue;
-      if      (edge.source === t1 && edge.target === t2) { edge.sourceCol = c1; edge.targetCol = c2; }
-      else if (edge.source === t2 && edge.target === t1) { edge.sourceCol = c2; edge.targetCol = c1; }
+    if (!joinColMap.has(t1)) joinColMap.set(t1, []);
+    if (!joinColMap.has(t2)) joinColMap.set(t2, []);
+    joinColMap.get(t1).push({ col: c1, peer: t2, peerCol: c2 });
+    joinColMap.get(t2).push({ col: c2, peer: t1, peerCol: c1 });
+  }
+  for (const edge of edgeMap.values()) {
+    const srcConds = joinColMap.get(edge.source) || [];
+    const tgtConds = joinColMap.get(edge.target) || [];
+    // Prefer a condition where both endpoints match (direct join pair)
+    const direct = srcConds.find(c => c.peer === edge.target);
+    if (direct) {
+      edge.sourceCol = direct.col;
+      edge.targetCol = direct.peerCol;
+    } else {
+      // Hub-spoke: assign best available col to each endpoint independently
+      if (srcConds.length) edge.sourceCol = srcConds[0].col;
+      if (tgtConds.length) edge.targetCol = tgtConds[0].col;
     }
   }
 
@@ -494,7 +515,7 @@ function render(data) {
   if (currentSimulation) currentSimulation.stop();
 
   currentSimulation = d3.forceSimulation(allNodes)
-    .force('link',      d3.forceLink(edges).id(d => d.id).distance(220).strength(0.5))
+    .force('link',      d3.forceLink(edges).id(d => d.id).distance(264).strength(0.5))
     .force('charge',    d3.forceManyBody().strength(-900))
     .force('center',    d3.forceCenter(w / 2, h / 2))
     .force('collision', d3.forceCollide().radius(d => {
@@ -510,9 +531,20 @@ function render(data) {
     .attr('stroke-dasharray', d => d.type === 'UNION' ? '8,4' : null)
     .attr('marker-end', d => d.type === 'UNION' ? null : `url(#arr-${d.type})`);
 
-  const linkLabelSel = gMain.append('g').selectAll('text').data(edges).join('text')
+  const linkLabelGrp = gMain.append('g').selectAll('text')
+    .data(edges.filter(e => e.type !== 'FROM')).join('text')
     .attr('class', 'link-label')
-    .text(d => d.type !== 'FROM' ? d.type : '');
+    .text(d => d.type);
+
+  const srcColLabelSel = gMain.append('g').selectAll('text')
+    .data(edges.filter(e => e.sourceCol)).join('text')
+    .attr('class', 'col-endpoint-label')
+    .text(d => d.sourceCol);
+
+  const tgtColLabelSel = gMain.append('g').selectAll('text')
+    .data(edges.filter(e => e.targetCol)).join('text')
+    .attr('class', 'col-endpoint-label')
+    .text(d => d.targetCol);
 
   // ── Drag ────────────────────────────────────
   const drag = d3.drag()
@@ -561,6 +593,7 @@ function render(data) {
     const { w, h } = cteSize(d);
     const x = -w / 2, y = -h / 2;
 
+    // Outer CTE box
     el.append('rect')
       .attr('x', x).attr('y', y).attr('width', w).attr('height', h)
       .attr('rx', 8).attr('fill', CTE_COLOR + '12').attr('stroke', CTE_COLOR).attr('stroke-width', 1.5);
@@ -586,72 +619,174 @@ function render(data) {
       .attr('x2', x + w - 10).attr('y2', y + CTE_HDR_H)
       .attr('stroke', CTE_COLOR + '55').attr('stroke-width', 1);
 
-    // Mini table-boxes inside the CTE
-    const tableColumns = d.tableColumns || new Map();
-    let curY = y + CTE_HDR_H + CTE_PAD_B;
-    const mw = w - 16;   // mini-box width (8px padding each side)
-    const mx = x + 8;
+    // ── Inner mini-graph ──────────────────────────
+    const innerPad = 12;
+    const innerX = x + innerPad, innerY = y + CTE_HDR_H + innerPad;
+    const innerW = w - innerPad * 2, innerH = h - CTE_HDR_H - innerPad * 2;
+    const cx = innerX + innerW / 2, cy = innerY + innerH / 2;
 
-    d.tables.forEach((tname, i) => {
+    // Clip inner graph to CTE body
+    const clipId = 'cte-clip-' + d.id.replace(/\W/g, '_');
+    el.append('clipPath').attr('id', clipId)
+      .append('rect')
+        .attr('x', innerX).attr('y', innerY)
+        .attr('width', innerW).attr('height', innerH).attr('rx', 5);
+
+    const innerG = el.append('g').attr('clip-path', `url(#${clipId})`);
+
+    const tableColumns = d.tableColumns || new Map();
+
+    // Pre-compute per-node box sizes, store on node data for collision + clamping
+    const miniNodes = d.tables.map(tname => {
       const cols   = tableColumns.get(tname) || [];
-      const mh     = miniBoxH(cols);
-      const color  = schemaColor(tname.split('.')[0] || null);
       const parts  = tname.split('.');
       const schema = parts.length > 1 ? parts[0] : '';
       const tbl    = parts[parts.length - 1];
+      const color  = schemaColor(tname.split('.')[0] || null);
+      const longestCol = cols.length ? Math.max(...cols.map(c => c.length)) : 0;
+      const mw     = Math.max(90, tbl.length * 6.2 + 16, longestCol * 6.2 + 30);
+      const mh     = MINI_HDR + (cols.length ? MINI_PAD + cols.length * MINI_ROW + MINI_PAD : MINI_PAD);
+      return {
+        id: tname, tbl, schema, color, cols, mw, mh,
+        x: cx + (Math.random() - 0.5) * innerW * 0.4,
+        y: cy + (Math.random() - 0.5) * innerH * 0.4,
+      };
+    });
 
-      if (i > 0) curY += MINI_GAP;
+    const miniLinks = (d.internalEdges || []).map(e => ({
+      source: e.source, target: e.target, type: e.type,
+      color: JOIN_COLORS[e.type] || JOIN_COLORS.INNER,
+    }));
 
-      // Mini-box background
-      el.append('rect')
-        .attr('x', mx).attr('y', curY).attr('width', mw).attr('height', mh)
-        .attr('rx', 5).attr('fill', color + '15').attr('stroke', color).attr('stroke-width', 1);
+    // Clamp helper — keeps node fully inside inner bounds
+    function clampMini(n) {
+      n.x = Math.max(innerX + n.mw / 2 + 4, Math.min(innerX + innerW - n.mw / 2 - 4, n.x));
+      n.y = Math.max(innerY + n.mh / 2 + 4, Math.min(innerY + innerH - n.mh / 2 - 4, n.y));
+    }
 
-      // Mini-box header band
-      el.append('rect')
-        .attr('x', mx).attr('y', curY).attr('width', mw).attr('height', MINI_HDR)
-        .attr('rx', 5).attr('fill', color + '2e');
-      el.append('rect')
-        .attr('x', mx).attr('y', curY + MINI_HDR - 4).attr('width', mw).attr('height', 4)
-        .attr('fill', color + '2e');
+    const miniSim = d3.forceSimulation(miniNodes)
+      .force('link', d3.forceLink(miniLinks).id(n => n.id)
+        .distance(Math.min(innerW, innerH) * 0.4).strength(0.5))
+      .force('charge', d3.forceManyBody().strength(-200))
+      .force('center', d3.forceCenter(cx, cy))
+      .force('collision', d3.forceCollide().radius(n => Math.sqrt(n.mw * n.mw + n.mh * n.mh) / 2 + 10))
+      .force('x', d3.forceX(cx).strength(0.06))
+      .force('y', d3.forceY(cy).strength(0.06))
+      .stop();
 
-      // schema. (dimmed) + tablename (bright)
-      const schW = schema.length * 5.5;
+    // Pre-settle layout
+    for (let i = 0; i < 400; i++) { miniSim.tick(); miniNodes.forEach(clampMini); }
+
+    // ── Draw edges (updatable) ──
+    const miniLinkLines = innerG.append('g').selectAll('line').data(miniLinks).join('line')
+      .attr('stroke', lk => lk.color).attr('stroke-width', 1.2).attr('stroke-opacity', 0.65)
+      .attr('marker-end', lk => lk.type !== 'UNION' ? `url(#arr-${lk.type})` : null)
+      .attr('stroke-dasharray', lk => lk.type === 'UNION' ? '5,3' : null);
+
+    const miniLinkLabels = innerG.append('g').selectAll('text')
+      .data(miniLinks.filter(lk => lk.type !== 'FROM')).join('text')
+      .attr('class', 'link-label')
+      .attr('font-size', '7px').attr('fill', '#999999')
+      .text(lk => lk.type);
+
+    // ── Draw nodes (updatable) ──
+    const miniNodeEls = innerG.append('g').selectAll('g').data(miniNodes).join('g')
+      .attr('cursor', 'grab');
+
+    miniNodeEls.each(function(n) {
+      const ng = d3.select(this);
+      const { mw, mh, color, schema, tbl, cols } = n;
+      const schW = schema ? schema.length * 5 : 0;
+
+      ng.append('rect')
+        .attr('x', -mw / 2).attr('y', -mh / 2).attr('width', mw).attr('height', mh)
+        .attr('rx', 5).attr('fill', color + '20').attr('stroke', color).attr('stroke-width', 1);
+      ng.append('rect')
+        .attr('x', -mw / 2).attr('y', -mh / 2).attr('width', mw).attr('height', MINI_HDR)
+        .attr('rx', 5).attr('fill', color + '35');
+      ng.append('rect')
+        .attr('x', -mw / 2).attr('y', -mh / 2 + MINI_HDR - 3).attr('width', mw).attr('height', 3)
+        .attr('fill', color + '35');
       if (schema) {
-        el.append('text')
-          .attr('x', mx + 7).attr('y', curY + MINI_HDR / 2)
+        ng.append('text')
+          .attr('x', -mw / 2 + 5).attr('y', -mh / 2 + MINI_HDR / 2)
           .attr('dominant-baseline', 'middle')
-          .attr('fill', color + 'aa').attr('font-size', '9px').attr('font-weight', '600')
-          .attr('font-family', "'SF Mono','Fira Code',monospace")
-          .text(schema + '.');
+          .attr('fill', color + 'aa').attr('font-size', '8px').attr('font-weight', '600')
+          .attr('font-family', "'SF Mono',monospace").text(schema + '.');
       }
-      el.append('text')
-        .attr('x', mx + 7 + schW).attr('y', curY + MINI_HDR / 2)
+      ng.append('text')
+        .attr('x', -mw / 2 + 5 + schW).attr('y', -mh / 2 + MINI_HDR / 2)
         .attr('dominant-baseline', 'middle')
-        .attr('fill', color).attr('font-size', '10px').attr('font-weight', '700')
-        .attr('font-family', "'SF Mono','Fira Code',monospace")
-        .text(tbl.length > 20 ? tbl.slice(0, 18) + '\u2026' : tbl);
-
-      // Columns
-      if (cols.length > 0) {
-        el.append('line')
-          .attr('x1', mx + 6).attr('y1', curY + MINI_HDR)
-          .attr('x2', mx + mw - 6).attr('y2', curY + MINI_HDR)
+        .attr('fill', color).attr('font-size', '9px').attr('font-weight', '700')
+        .attr('font-family', "'SF Mono',monospace")
+        .text(tbl.length > 16 ? tbl.slice(0, 14) + '\u2026' : tbl);
+      if (cols.length) {
+        ng.append('line')
+          .attr('x1', -mw / 2 + 4).attr('y1', -mh / 2 + MINI_HDR)
+          .attr('x2',  mw / 2 - 4).attr('y2', -mh / 2 + MINI_HDR)
           .attr('stroke', color + '44').attr('stroke-width', 0.75);
         cols.forEach((col, ci) => {
-          const ry = curY + MINI_HDR + MINI_PAD + (ci + 0.5) * MINI_ROW;
-          el.append('circle').attr('cx', mx + 10).attr('cy', ry).attr('r', 2.5).attr('fill', color);
-          el.append('text')
-            .attr('x', mx + 17).attr('y', ry)
-            .attr('dominant-baseline', 'middle')
-            .attr('fill', '#111111').attr('font-size', '8.5px')
+          const ry = -mh / 2 + MINI_HDR + MINI_PAD + (ci + 0.5) * MINI_ROW;
+          ng.append('circle').attr('cx', -mw / 2 + 8).attr('cy', ry).attr('r', 2).attr('fill', color);
+          ng.append('text')
+            .attr('x', -mw / 2 + 14).attr('y', ry).attr('dominant-baseline', 'middle')
+            .attr('fill', '#111111').attr('font-size', '9px')
             .attr('font-family', "'SF Mono',monospace")
-            .text(col.length > 28 ? col.slice(0, 26) + '\u2026' : col);
+            .text(col.length > 22 ? col.slice(0, 20) + '\u2026' : col);
         });
       }
-
-      curY += mh;
     });
+
+    // Exit point at mini-box boundary (mirrors outer edgeEndpoint logic)
+    function miniEP(n, dx, dy) {
+      if (Math.abs(dx) >= Math.abs(dy) * 0.3)
+        return { x: n.x + (dx > 0 ? n.mw / 2 : -n.mw / 2), y: n.y };
+      return { x: n.x, y: n.y + (dy > 0 ? n.mh / 2 : -n.mh / 2) };
+    }
+    function applyMiniLinks() {
+      miniLinkLines.each(function(lk) {
+        const dx = lk.target.x - lk.source.x, dy = lk.target.y - lk.source.y;
+        const p1 = miniEP(lk.source,  dx,  dy);
+        const p2 = miniEP(lk.target, -dx, -dy);
+        lk._mp1 = p1; lk._mp2 = p2;
+        d3.select(this)
+          .attr('x1', Math.round(p1.x)).attr('y1', Math.round(p1.y))
+          .attr('x2', Math.round(p2.x)).attr('y2', Math.round(p2.y));
+      });
+      miniLinkLabels
+        .attr('x', lk => lk._mp1 ? Math.round((lk._mp1.x + lk._mp2.x) / 2) : 0)
+        .attr('y', lk => lk._mp1 ? Math.round((lk._mp1.y + lk._mp2.y) / 2) - 4 : 0);
+    }
+
+    // Set initial positions (rounded to avoid sub-pixel blur)
+    miniNodeEls.attr('transform', n => `translate(${Math.round(n.x)},${Math.round(n.y)})`);
+    applyMiniLinks();
+
+    // ── Drag — constrained to CTE inner bounds ──
+    const miniDrag = d3.drag()
+      .on('start', (e, dn) => {
+        e.sourceEvent.stopPropagation();
+        if (!e.active) miniSim.alphaTarget(0.3).restart();
+        dn.fx = dn.x; dn.fy = dn.y;
+      })
+      .on('drag', (e, dn) => {
+        dn.fx = Math.max(innerX + dn.mw / 2 + 4, Math.min(innerX + innerW - dn.mw / 2 - 4, e.x));
+        dn.fy = Math.max(innerY + dn.mh / 2 + 4, Math.min(innerY + innerH - dn.mh / 2 - 4, e.y));
+      })
+      .on('end', (e, dn) => {
+        if (!e.active) miniSim.alphaTarget(0);
+        dn.fx = null; dn.fy = null;
+      });
+    miniNodeEls.call(miniDrag);
+
+    // ── Tick — clamp + redraw ──
+    miniSim.on('tick', () => {
+      miniNodes.forEach(clampMini);
+      miniNodeEls.attr('transform', n => `translate(${Math.round(n.x)},${Math.round(n.y)})`);
+      applyMiniLinks();
+    });
+
+    miniSim.restart();
   });
 
   // ── Simulation tick ──────────────────────────
@@ -660,11 +795,21 @@ function render(data) {
       const dx = d.target.x - d.source.x, dy = d.target.y - d.source.y;
       const p1 = edgeEndpoint(d.source,  dx,  dy, d.sourceCol);
       const p2 = edgeEndpoint(d.target, -dx, -dy, d.targetCol);
+      d._p1 = p1; d._p2 = p2;
       d3.select(this).attr('x1', p1.x).attr('y1', p1.y).attr('x2', p2.x).attr('y2', p2.y);
     });
-    linkLabelSel
-      .attr('x', d => (d.source.x + d.target.x) / 2)
-      .attr('y', d => (d.source.y + d.target.y) / 2 - 6);
+    linkLabelGrp
+      .attr('transform', d => {
+        const mx = d._p1 ? (d._p1.x + d._p2.x) / 2 : (d.source.x + d.target.x) / 2;
+        const my = d._p1 ? (d._p1.y + d._p2.y) / 2 : (d.source.y + d.target.y) / 2;
+        return `translate(${mx},${my})`;
+      });
+    srcColLabelSel
+      .attr('x', d => d._p1 ? d._p1.x + (d._p2.x - d._p1.x) * 0.15 : 0)
+      .attr('y', d => d._p1 ? d._p1.y + (d._p2.y - d._p1.y) * 0.15 - 5 : 0);
+    tgtColLabelSel
+      .attr('x', d => d._p1 ? d._p1.x + (d._p2.x - d._p1.x) * 0.85 : 0)
+      .attr('y', d => d._p1 ? d._p1.y + (d._p2.y - d._p1.y) * 0.85 - 5 : 0);
     tblNodeSel.attr('transform', d => `translate(${d.x},${d.y})`);
     cteNodeSel.attr('transform', d => `translate(${d.x},${d.y})`);
   });
