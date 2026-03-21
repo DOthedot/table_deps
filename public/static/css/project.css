@@ -1,0 +1,60 @@
+/* ── PROJECT-SPECIFIC CSS — table-deps project DAG ── */
+
+/* Sidebar width override for project page */
+#sidebar {
+  width: 270px;
+}
+
+/* Header elements specific to project page */
+.header-sub { font-size: 12px; color: var(--muted); }
+#project-badge {
+  display: none; background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 4px; padding: 3px 10px; font-size: 11px; font-family: monospace; color: var(--accent);
+}
+
+/* Drop zone */
+#drop-zone {
+  border: 2px dashed var(--border); border-radius: 8px; padding: 16px 10px;
+  text-align: center; cursor: pointer; background: var(--surface2);
+  transition: border-color 0.2s, background 0.2s;
+}
+#drop-zone:hover, #drop-zone.over { border-color: var(--accent); background: color-mix(in srgb,var(--accent) 8%,var(--surface2)); }
+#drop-zone.loaded { border-style: solid; border-color: var(--accent); }
+#drop-zone .dz-icon  { font-size: 22px; margin-bottom: 5px; }
+#drop-zone .dz-label { font-size: 12px; font-weight: 600; color: var(--text); }
+#drop-zone .dz-hint  { font-size: 10px; color: var(--muted); margin-top: 3px; }
+
+#open-btn  { flex: 1; background: var(--accent); color: #0d1117; }
+#clear-btn { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); padding: 7px 10px; }
+#compat-warn {
+  display: none; margin-top: 8px; font-size: 10px; color: var(--orange);
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 4px; padding: 6px 8px;
+}
+
+/* Table list badge (project-specific lv-badge) */
+#table-list li {
+  cursor: pointer;
+  border-left: 3px solid transparent;
+  gap: 7px;
+}
+#table-list li.hl { background: var(--border); }
+#table-list li .lv-badge {
+  margin-left: auto; font-size: 9px; color: var(--muted);
+  background: var(--border); border-radius: 3px; padding: 1px 4px; white-space: nowrap;
+}
+
+/* Tooltip extra fields */
+#tooltip .tt-file { font-size: 10px; color: var(--muted); font-family: monospace; margin-bottom: 8px; }
+#tooltip { min-width: 200px; }
+
+/* ── SVG node + edge styles ──────────────────────── */
+.edge      { stroke: #94a3b8; stroke-width: 1.5; fill: none; stroke-opacity: 0.55; }
+.edge.faded{ stroke-opacity: 0.07; }
+.edge.hl   { stroke-opacity: 1;  stroke-width: 2.5; stroke: #58a6ff; }
+
+.box-node          { cursor: grab; }
+.box-node.grabbing { cursor: grabbing !important; }
+.box-node.faded    { opacity: 0.12; pointer-events: none; }
+.box-node.hl .node-bg { filter: brightness(1.18); }
+.box-node.grabbing .node-bg { filter: drop-shadow(0 0 8px currentColor) brightness(1.25); }

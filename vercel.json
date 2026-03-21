@@ -1,0 +1,6 @@
+{
+  "rewrites": [
+    { "source": "/visualizer", "destination": "/index.html" },
+    { "source": "/project",    "destination": "/project.html" }
+  ]
+}

@@ -13,7 +13,15 @@
       "Bash(do if grep -q '^\\\\s*$' \"$f\")",
       "Bash(then echo \"$f: OK\")",
       "Bash(fi)",
-      "Bash(done)"
+      "Bash(done)",
+      "Bash(mkdir -p /Users/dhananjayojha/Documents/projects/de_projects/table_deps/public/static/css /Users/dhananjayojha/Documents/projects/de_projects/table_deps/public/static/js)",
+      "Bash(cp /Users/dhananjayojha/Documents/projects/de_projects/table_deps/table_deps/frontend_service/static/css/*.css /Users/dhananjayojha/Documents/projects/de_projects/table_deps/public/static/css/)",
+      "Bash(cp /Users/dhananjayojha/Documents/projects/de_projects/table_deps/table_deps/frontend_service/static/js/*.js /Users/dhananjayojha/Documents/projects/de_projects/table_deps/public/static/js/)",
+      "Bash(cp /Users/dhananjayojha/Documents/projects/de_projects/table_deps/table_deps/frontend_service/templates/visualizer.html /Users/dhananjayojha/Documents/projects/de_projects/table_deps/public/index.html)",
+      "Bash(cp /Users/dhananjayojha/Documents/projects/de_projects/table_deps/table_deps/frontend_service/templates/project.html /Users/dhananjayojha/Documents/projects/de_projects/table_deps/public/project.html)"
+    ],
+    "additionalDirectories": [
+      "/Users/dhananjayojha/Documents/projects/de_projects/table_deps/public"
     ]
   }
 }

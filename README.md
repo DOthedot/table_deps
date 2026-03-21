@@ -23,6 +23,10 @@ This becomes a real problem when:
 
 ## Quick Start
 
+**Try it live** (no install needed) → deployed on Vercel
+
+Or run locally:
+
 ```bash
 # Install
 uv sync
@@ -244,6 +248,11 @@ table_deps/
 │   └── data_vault/          # Data Vault 2.0 (19 files)
 ├── docs/
 │   └── ui_screenshot.png
+├── public/                  # Static build for Vercel deployment
+│   ├── index.html           # SQL Visualizer (served at /)
+│   ├── project.html         # Project DAG (served at /project)
+│   └── static/              # CSS + JS assets
+├── vercel.json              # Vercel route rewrites
 ├── main.py                  # Backward-compatible entry point
 └── pyproject.toml
 ```
@@ -260,6 +269,44 @@ With coverage:
 
 ```bash
 uv run pytest --cov=table_deps --cov-report=term-missing
+```
+
+---
+
+## Live Demo
+
+The SQL Visualizer and Project DAG are deployed as a static site on Vercel — no installation needed:
+
+- **SQL Visualizer** — paste any SQL query and explore the dependency graph
+- **Project DAG** — open a local folder of `.sql` files and visualise the full project graph
+
+Both pages run entirely in the browser (no backend, no data sent anywhere).
+
+---
+
+## Deployment
+
+The `public/` directory contains the static build ready for Vercel.
+
+### Deploy to Vercel (one-time setup)
+
+1. Push this repo to GitHub
+2. Go to [vercel.com](https://vercel.com) → **Add New Project** → import the repo
+3. Set **Framework Preset** to `Other` and **Output Directory** to `public`
+4. Click **Deploy**
+
+Every subsequent `git push` to `main` triggers an automatic re-deploy.
+
+### Project structure for Vercel
+
+```text
+public/
+├── index.html          ← SQL Visualizer  (served at / and /visualizer)
+├── project.html        ← Project DAG     (served at /project)
+└── static/
+    ├── css/            ← shared, visualizer, project styles
+    └── js/             ← colors, sql_parser, visualizer, project scripts
+vercel.json             ← route rewrites (/visualizer → index.html, /project → project.html)
 ```
 
 ---

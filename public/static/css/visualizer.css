@@ -1,0 +1,59 @@
+/* ── VISUALIZER-SPECIFIC CSS — table-deps SQL visualizer ── */
+
+textarea#sql-input {
+  width: 100%; height: 160px;
+  background: var(--surface2); border: 1px solid var(--border); border-radius: 6px;
+  color: var(--text); font-family: 'SF Mono','Fira Code',monospace;
+  font-size: 11px; line-height: 1.6; padding: 8px 10px;
+  resize: vertical; outline: none; transition: border-color 0.15s;
+}
+textarea#sql-input:focus { border-color: var(--accent); }
+
+#analyze-btn { flex: 1; background: var(--accent); color: #0d1117; }
+#example-btn { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+#clear-btn   { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); padding: 7px 10px; }
+
+/* Table list badge */
+#table-list li .badge {
+  margin-left: auto; font-size: 9px; color: var(--muted);
+  background: var(--border); border-radius: 3px; padding: 1px 4px;
+}
+
+/* CTE list */
+#cte-list { display: flex; flex-direction: column; gap: 8px; max-height: 220px; overflow-y: auto; }
+.cte-item {
+  background: var(--surface2); border: 1px solid var(--cte);
+  border-radius: 6px; overflow: hidden;
+}
+.cte-item-header {
+  background: color-mix(in srgb, var(--cte) 15%, transparent);
+  padding: 5px 10px;
+  font-size: 11px; font-weight: 700; font-family: 'SF Mono',monospace;
+  color: var(--cte); display: flex; align-items: center; gap: 6px;
+}
+.cte-item-header .cte-badge {
+  margin-left: auto; font-size: 9px; font-weight: 600;
+  background: color-mix(in srgb, var(--cte) 20%, transparent);
+  border-radius: 3px; padding: 1px 5px; color: var(--cte);
+}
+.cte-item-tables { padding: 4px 10px 8px; display: flex; flex-direction: column; gap: 2px; }
+.cte-item-table {
+  font-size: 10px; font-family: 'SF Mono',monospace;
+  color: var(--muted); padding: 1px 0;
+}
+
+/* ── SVG STYLES ──────────────────────────── */
+.link { stroke-opacity: 0.55; stroke-width: 1.5; fill: none; }
+.link-label {
+  font-size: 9px; font-family: 'SF Mono',monospace; font-weight: 600;
+  fill: #333333; text-anchor: middle; dominant-baseline: middle;
+  pointer-events: none; user-select: none;
+}
+.table-node circle { stroke-width: 2px; }
+.table-node:hover circle { stroke-width: 3px; }
+.table-node text { pointer-events: none; user-select: none; text-anchor: middle; dominant-baseline: middle; }
+.cte-node { cursor: grab; }
+.cte-node:active { cursor: grabbing; }
+.cte-node text { pointer-events: none; user-select: none; }
+.cte-node rect { transition: filter 0.15s; }
+.cte-node:hover .cte-bg { filter: brightness(1.15); }

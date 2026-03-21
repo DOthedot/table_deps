@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>table-deps — Project Overview</title>
+  <link rel="stylesheet" href="/static/css/shared.css" />
+  <link rel="stylesheet" href="/static/css/project.css" />
+</head>
+<body>
+
+<header>
+  <h1>&#x2b21; table-deps</h1>
+  <span class="header-sub">Project DAG</span>
+  <div id="project-badge"></div>
+  <div class="spacer"></div>
+  <span class="tip">Scroll to zoom &middot; Pan canvas &middot; Drag nodes to reposition &middot; Hover to trace deps</span>
+  <a href="/" style="font-size:11px;color:var(--muted);text-decoration:none;padding:3px 8px;background:var(--surface2);border:1px solid var(--border);border-radius:4px;">SQL Visualizer</a>
+</header>
+
+<main>
+  <aside id="sidebar">
+
+    <div class="section">
+      <div class="section-label">Project Directory</div>
+      <div id="drop-zone">
+        <div class="dz-icon">&#x1f4c2;</div>
+        <div class="dz-label">Open Project Folder</div>
+        <div class="dz-hint">Click to browse or drop a folder</div>
+      </div>
+      <div class="btn-row">
+        <button id="open-btn">&#9654; Open Folder</button>
+        <button id="example-btn" title="Load Kimball Retail example">&#9733; Example</button>
+        <button id="clear-btn" title="Clear">&#x2715;</button>
+      </div>
+      <div id="compat-warn">
+        &#9888; Folder picker requires Chrome/Edge. Use CLI:<br/>
+        <code>table-deps project-ui /your/project</code>
+      </div>
+    </div>
+
+    <div class="section" id="stats-section" style="display:none">
+      <div class="section-label">Summary</div>
+      <div class="stats-row">
+        <div class="stat-card"><div class="num" id="st-tables">0</div><div class="lbl">Tables</div></div>
+        <div class="stat-card"><div class="num" id="st-edges">0</div><div class="lbl">Deps</div></div>
+        <div class="stat-card"><div class="num" id="st-levels">0</div><div class="lbl">Levels</div></div>
+      </div>
+    </div>
+
+    <div class="section" id="tables-section" style="display:none">
+      <div class="section-label">Tables</div>
+      <ul id="table-list"></ul>
+    </div>
+
+    <div class="section">
+      <div class="section-label">Legend</div>
+      <div class="legend-grid" id="schema-legend"></div>
+      <div style="margin-top:10px"></div>
+      <div class="legend-grid">
+        <div class="legend-row">
+          <div style="width:22px;height:2px;background:#94a3b8;border-radius:1px;flex-shrink:0"></div>
+          reads from &rarr;
+        </div>
+        <div class="legend-row">
+          <div class="legend-swatch" style="background:#6b7280"></div>
+          External table (no project file)
+        </div>
+      </div>
+    </div>
+
+  </aside>
+
+  <div id="graph-container">
+    <div id="empty-state">
+      <div class="icon">&#x1f4c1;</div>
+      <p>Open a project folder to begin</p>
+      <small>Select a directory with <strong>.sql</strong> files named <code>schema.table.sql</code>. Each file becomes a node; graph flows left &rarr; right by dependency level.</small>
+    </div>
+    <svg id="graph"></svg>
+    <div id="tooltip">
+      <div class="tt-name" id="tt-name"></div>
+      <div class="tt-file" id="tt-file"></div>
+      <div class="tt-row"><span>Reads from (project)</span><span class="tt-val" id="tt-in">0</span></div>
+      <div class="tt-row"><span>Used by (project)</span><span class="tt-val" id="tt-out">0</span></div>
+      <div class="tt-row"><span>External refs</span><span class="tt-val" id="tt-ext">0</span></div>
+      <div class="tt-row"><span>DAG level</span><span class="tt-val" id="tt-lv">&mdash;</span></div>
+      <div style="margin-top:8px;font-size:10px;color:var(--muted);border-top:1px solid var(--border);padding-top:6px">Double-click to open in visualizer</div>
+    </div>
+    <div id="graph-controls">
+      <div class="ctrl-btn" id="zoom-in"  title="Zoom in">+</div>
+      <div class="ctrl-btn" id="zoom-out" title="Zoom out">&minus;</div>
+      <div class="ctrl-btn" id="zoom-fit" title="Fit to view">&#x229f;</div>
+      <div class="ctrl-btn" id="reset-layout" title="Reset layout" style="font-size:13px">&#x27f3;</div>
+    </div>
+  </div>
+</main>
+
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script src="/static/js/colors.js"></script>
+<script src="/static/js/sql_parser.js"></script>
+<script src="/static/js/project.js"></script>
+</body>
+</html>
