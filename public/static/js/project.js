@@ -5,6 +5,66 @@
 //              (colors.js provides schemaColor)
 // ═══════════════════════════════════════════════════
 
+// Parse SELECT-list column names from a SQL file (top-level SELECT at depth 0)
+function extractColumns(sql) {
+  if (!sql || !sql.trim()) return [];
+  sql = sql.replace(/--[^\n]*/g, ' ').replace(/\/\*[\s\S]*?\*\//g, ' ')
+           .replace(/'(?:[^'\\]|\\.)*'/g, "''");
+
+  // Walk character-by-character tracking paren depth.
+  // Find first top-level SELECT, then first top-level FROM after it.
+  let selectStart = -1, fromIdx = -1, depth = 0;
+  for (let i = 0; i < sql.length; i++) {
+    const ch = sql[i];
+    if (ch === '(') { depth++; continue; }
+    if (ch === ')') { depth--; continue; }
+    if (depth !== 0) continue;
+
+    const word6 = sql.slice(i, i + 6).toUpperCase();
+    const word4 = sql.slice(i, i + 4).toUpperCase();
+    const before = i === 0 || /\W/.test(sql[i - 1]);
+
+    if (selectStart === -1 && word6 === 'SELECT' && before && /\s/.test(sql[i + 6] || ' ')) {
+      selectStart = i + 6;
+      continue;
+    }
+    if (selectStart !== -1 && word4 === 'FROM' && before && /\W/.test(sql[i + 4] || ' ')) {
+      fromIdx = i;
+      break;
+    }
+  }
+  if (selectStart < 0 || fromIdx < 0) return [];
+
+  // Split SELECT clause on top-level commas
+  const clause = sql.slice(selectStart, fromIdx);
+  const items = []; let cur = '', d = 0;
+  for (const ch of clause) {
+    if      (ch === '(') { d++; cur += ch; }
+    else if (ch === ')') { d--; cur += ch; }
+    else if (ch === ',' && d === 0) { items.push(cur.trim()); cur = ''; }
+    else cur += ch;
+  }
+  if (cur.trim()) items.push(cur.trim());
+
+  const cols = [];
+  for (const part of items) {
+    if (!part) continue;
+    // AS alias wins
+    const asM = part.match(/\bAS\s+([`"\[]?\w+[`"\]]?)\s*$/i);
+    if (asM) { cols.push(asM[1].replace(/[`"[\]]/g, '').toLowerCase()); continue; }
+    // table.col → col
+    const qualM = part.match(/\w+\.([`"\[]?\w+[`"\]]?)\s*$/);
+    if (qualM) { cols.push(qualM[1].replace(/[`"[\]]/g, '').toLowerCase()); continue; }
+    // bare identifier
+    const plainM = part.match(/([`"\[]?\w+[`"\]]?)\s*$/);
+    if (plainM) {
+      const n = plainM[1].replace(/[`"[\]]/g, '').toLowerCase();
+      if (n !== '*' && !SQL_KEYWORDS.has(n)) cols.push(n);
+    }
+  }
+  return cols;
+}
+
 function extractTables(sql) {
   if (!sql || !sql.trim()) return [];
   sql = sql.replace(/--[^\n]*/g, ' ');
@@ -39,7 +99,7 @@ function buildGraphFromFiles(files) {
     const table  = stem.split('.').slice(1).join('_');
     nodes.set(stem, { id: stem, label: stem, schema, table, file: name,
                       all_refs: [], internal_refs: [], external_refs: [], degree: 0,
-                      sql_content: content });
+                      sql_content: content, columns: extractColumns(content) });
     fileRefs.set(stem, extractTables(content));
   }
 
@@ -125,14 +185,15 @@ const MIN_W = 195, MAX_W = 270;
 const H_GAP = 90, V_GAP = 28, CANVAS_PAD = 50;
 
 function boxW(node) {
-  const longestRef = Math.max(node.label.length,
-    ...(node.all_refs.length ? node.all_refs.map(r => r.length) : [0]));
-  return Math.min(MAX_W, Math.max(MIN_W, Math.min(longestRef, 30) * 6.9 + PAD_H * 2));
+  const cols = node.columns || [];
+  const longest = Math.max(node.label.length, ...(cols.length ? cols.map(c => c.length) : [0]));
+  return Math.min(MAX_W, Math.max(MIN_W, Math.min(longest, 30) * 6.9 + PAD_H * 2));
 }
 
 function boxH(node) {
-  return HDR_H + (node.all_refs.length > 0
-    ? PAD_V + Math.min(node.all_refs.length, 12) * ROW_H + PAD_V
+  const cols = node.columns || [];
+  return HDR_H + (cols.length > 0
+    ? PAD_V + Math.min(cols.length, 12) * ROW_H + PAD_V
     : PAD_V);
 }
 
@@ -224,7 +285,7 @@ let gMain, zoomBeh, currentSim = null, currentData = null, hlId = null;
 function renderGraph(data) {
   currentData = data;
   const { nodes, edges } = data;
-  const { totalW, totalH, maxLevel } = assignPositions(nodes, edges);
+  const { totalW, totalH } = assignPositions(nodes, edges);
 
   svgD3.selectAll('*').remove();
   svgD3.attr('viewBox', [0, 0, totalW, totalH]);
@@ -351,7 +412,6 @@ function renderBox(sel, node) {
   const w = node._w, h = node._h;
   const x = -w / 2, y = -h / 2;
   const color = schemaColor(node.schema);
-  const internalSet = new Set(node.internal_refs || []);
 
   // Background rect
   sel.append('rect').attr('class', 'node-bg')
@@ -395,29 +455,25 @@ function renderBox(sel, node) {
     .attr('x2', x + w - 10).attr('y2', y + HDR_H)
     .attr('stroke', color + '44').attr('stroke-width', 1);
 
-  // Dep rows
-  const refs     = node.all_refs || [];
-  const showRows = refs.slice(0, 12);
-  const extra    = refs.length - 12;
+  // Column rows
+  const cols     = node.columns || [];
+  const showCols = cols.slice(0, 12);
+  const extra    = cols.length - 12;
 
-  showRows.forEach((ref, i) => {
-    const ry     = y + HDR_H + PAD_V + (i + 0.5) * ROW_H;
-    const isInt  = internalSet.has(ref);
-    const dotClr = isInt ? schemaColor(ref.split('.')[0]) : '#6b7280';
-
-    sel.append('circle').attr('cx', x + 12).attr('cy', ry).attr('r', 3).attr('fill', dotClr);
-
+  showCols.forEach((col, i) => {
+    const ry = y + HDR_H + PAD_V + (i + 0.5) * ROW_H;
+    sel.append('circle').attr('cx', x + 12).attr('cy', ry).attr('r', 3).attr('fill', color);
     sel.append('text')
       .attr('x', x + 21).attr('y', ry)
       .attr('dominant-baseline', 'middle')
-      .attr('fill', isInt ? '#111111' : '#888888')
+      .attr('fill', '#4d5562')
       .attr('font-size', '9.5px')
       .attr('font-family', "'SF Mono',monospace")
-      .text(ref.length > 31 ? ref.slice(0, 29) + '\u2026' : ref);
+      .text(col.length > 31 ? col.slice(0, 29) + '\u2026' : col);
   });
 
   if (extra > 0) {
-    const ry = y + HDR_H + PAD_V + (showRows.length + 0.5) * ROW_H;
+    const ry = y + HDR_H + PAD_V + (showCols.length + 0.5) * ROW_H;
     sel.append('text')
       .attr('x', x + 12).attr('y', ry)
       .attr('dominant-baseline', 'middle')
