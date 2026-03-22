@@ -87,6 +87,8 @@ Scan a folder of `.sql` files and visualise the **entire project's cross-file de
 
 ![Project DAG](docs/project_overview_ui.png)
 
+![Column Dependencies](docs/column_deps.png)
+
 ```bash
 uv run table-deps project-ui /path/to/your/project
 ```
@@ -105,6 +107,8 @@ Files must follow the `schema.table_name.sql` naming convention. The schema pref
 - **Example** button — loads the Kimball retail project instantly (no folder needed)
 - **Zoom controls** — zoom in/out, fit-to-view, reset layout; scroll to zoom graph only (sidebar stays fixed); resize sidebar with `[` / `]`
 - **Sidebar** — project stats, table list sorted by DAG level, schema colour legend
+
+![Global Search](docs/global_search.png)
 
 ### Naming Convention
 
