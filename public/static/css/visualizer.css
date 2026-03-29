@@ -1,5 +1,29 @@
 /* ── VISUALIZER-SPECIFIC CSS — table-deps SQL visualizer ── */
 
+/* ── Navigation button to Project DAG ── */
+.nav-btn {
+  display: flex; align-items: center; gap: 10px;
+  margin: 12px 12px 0; padding: 10px 14px;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 12%, var(--surface2)), var(--surface2));
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--border));
+  border-radius: 8px;
+  color: var(--accent); font-size: 13px; font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s, transform 0.1s;
+}
+.nav-btn:hover {
+  background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 20%, var(--surface2)), var(--surface2));
+  border-color: var(--accent);
+}
+.nav-btn:active { transform: scale(0.98); }
+.nav-btn svg { flex-shrink: 0; opacity: 0.8; }
+.nav-btn .nav-arrow {
+  margin-left: auto; font-size: 14px; opacity: 0.5;
+  transition: transform 0.2s, opacity 0.2s;
+}
+.nav-btn:hover .nav-arrow { transform: translateX(3px); opacity: 1; }
+
 textarea#sql-input {
   width: 100%; height: 160px;
   background: var(--surface2); border: 1px solid var(--border); border-radius: 6px;

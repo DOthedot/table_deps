@@ -367,7 +367,7 @@ function renderGraph(data) {
   const { totalW, totalH } = assignPositions(nodes, edges);
 
   svgD3.selectAll('*').remove();
-  svgD3.attr('viewBox', [0, 0, totalW, totalH]);
+  svgD3.attr('viewBox', null);
 
   // ── Zoom / pan ──────────────────────────────────
   zoomBeh = d3.zoom()
@@ -734,7 +734,7 @@ function fitToView(scaleMult) {
   const bw = maxX - minX, bh = maxY - minY;
   if (bw === 0 || bh === 0) return;
   const { clientWidth: w, clientHeight: h } = container;
-  const scale = Math.max(Math.min(w / bw, h / bh, 2), 0.25) * (scaleMult || 1);
+  const scale = Math.max(Math.min(w / bw, h / bh, 1.5), 0.45) * (scaleMult || 1);
   const tx = w / 2 - scale * (minX + bw / 2);
   const ty = h / 2 - scale * (minY + bh / 2);
   svgD3.transition().duration(400)

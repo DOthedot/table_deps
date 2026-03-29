@@ -14,12 +14,20 @@
   <span>SQL Table Dependency Visualizer</span>
   <div class="spacer"></div>
   <span class="tip">Scroll to zoom &middot; Drag nodes &middot; Pan canvas</span>
-  <a href="/project" style="font-size:11px;color:var(--muted);text-decoration:none;padding:3px 8px;background:var(--surface2);border:1px solid var(--border);border-radius:4px;">Project DAG</a>
 </header>
 
 <main>
   <!-- ── SIDEBAR ── -->
   <aside id="sidebar">
+
+    <a href="/project" class="nav-btn" id="project-dag-btn">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="3" cy="8" r="2"/><circle cx="13" cy="4" r="2"/><circle cx="13" cy="12" r="2"/>
+        <line x1="5" y1="8" x2="11" y2="4"/><line x1="5" y1="8" x2="11" y2="12"/>
+      </svg>
+      Project DAG
+      <span class="nav-arrow">&rarr;</span>
+    </a>
 
     <div class="section">
       <div class="section-label">SQL Query</div>

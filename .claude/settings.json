@@ -32,5 +32,8 @@
     "additionalDirectories": [
       "/Users/dhananjayojha/Documents/projects/de_projects/table_deps/public"
     ]
+  },
+  "enabledPlugins": {
+    "ui-ux-pro-max@ui-ux-pro-max-skill": true
   }
 }
