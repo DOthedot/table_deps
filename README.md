@@ -45,6 +45,18 @@ uv run table-deps project-ui test_projects/kimball_retail
 
 ---
 
+## Getting around
+
+Both views share one header: a **Project | Query** switch (`1` / `2`), a breadcrumb showing where you are, and **⌘K / Ctrl+K** to jump to any table. First-time visitors get a short animated **welcome guide**; reopen it any time with **?**.
+
+| Key | Action |
+|---|---|
+| `1` / `2` | Project view / Query view |
+| `⌘K` / `Ctrl+K` | Jump to table (`↵` open query, `⇧↵` show in DAG) |
+| `Enter` | Open the selected node's query |
+| `Esc` | Back to the DAG / deselect |
+| `?` | Welcome guide |
+
 ## SQL Visualizer
 
 Paste any SQL query and explore it as an interactive force-directed graph. Each table becomes a node, each JOIN an edge.
@@ -102,7 +114,7 @@ Files must follow the `schema.table_name.sql` naming convention. The schema pref
 - **Node boxes** — each node shows its schema header, column list, and colour-coded dep/external-ref indicators
 - **Column source tracing** — hover a column row to highlight which upstream table it originates from, with a connecting edge
 - **Search** (`Ctrl+F` or `/`) — type any table or column name; fuzzy matches are highlighted with the same fading as hover; matching column rows are lit up inside each node; cycle through matches with `Enter` / `Shift+Enter` or the ↑ ↓ buttons; press `Esc` to clear
-- **Double-click a node** — opens that file's SQL in the SQL Visualizer in a new tab, auto-analysed
+- **Click a node** — opens an inspector showing what it reads from and what uses it; **Open in Query view** (or double-click / `Enter`) shows that file's SQL graph in the same tab, with a context strip to hop to neighbouring files. `Esc` or browser back returns to the DAG with selection and zoom intact
 - **Physics simulation** — drag nodes to explore; edges redraw live; release to let the layout spring back
 - **Example** button — loads the Kimball retail project instantly (no folder needed)
 - **Zoom controls** — zoom in/out, fit-to-view, reset layout; scroll to zoom graph only (sidebar stays fixed); resize sidebar with `[` / `]`

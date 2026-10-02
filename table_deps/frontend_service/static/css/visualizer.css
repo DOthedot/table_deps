@@ -1,29 +1,5 @@
 /* ── VISUALIZER-SPECIFIC CSS — table-deps SQL visualizer ── */
 
-/* ── Navigation button to Project DAG ── */
-.nav-btn {
-  display: flex; align-items: center; gap: 10px;
-  margin: 12px 12px 0; padding: 10px 14px;
-  background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 12%, var(--surface2)), var(--surface2));
-  border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--border));
-  border-radius: 8px;
-  color: var(--accent); font-size: 13px; font-weight: 600;
-  text-decoration: none;
-  cursor: pointer;
-  transition: background 0.2s, border-color 0.2s, transform 0.1s;
-}
-.nav-btn:hover {
-  background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 20%, var(--surface2)), var(--surface2));
-  border-color: var(--accent);
-}
-.nav-btn:active { transform: scale(0.98); }
-.nav-btn svg { flex-shrink: 0; opacity: 0.8; }
-.nav-btn .nav-arrow {
-  margin-left: auto; font-size: 14px; opacity: 0.5;
-  transition: transform 0.2s, opacity 0.2s;
-}
-.nav-btn:hover .nav-arrow { transform: translateX(3px); opacity: 1; }
-
 textarea#sql-input {
   width: 100%; height: 160px;
   background: var(--surface2); border: 1px solid var(--border); border-radius: 6px;
@@ -84,3 +60,47 @@ textarea#sql-input:focus { border-color: var(--accent); }
 .cte-node text { pointer-events: none; user-select: none; }
 .cte-node rect { transition: filter 0.15s; }
 .cte-node:hover .cte-bg { filter: brightness(1.15); }
+
+/* ── Source file note (Query view opened from a project) ── */
+.source-note {
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+  font-size: 11px; color: var(--muted); margin-bottom: 6px;
+}
+.source-note[hidden] { display: none; }
+.source-note code {
+  color: var(--text); font-family: 'SF Mono','Fira Code',monospace;
+  min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.source-note button {
+  margin-left: auto; white-space: nowrap;
+  background: none; border: 1px solid var(--border); color: var(--accent);
+  font-size: 11px; font-weight: 500; padding: 2px 8px;
+}
+.source-note button:hover { border-color: var(--accent); opacity: 1; }
+textarea#sql-input[readonly] { border-style: dashed; color: #c9d1d9; }
+
+/* ── Context strip ── */
+#ctx-strip {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap; flex-shrink: 0;
+  padding: 7px 20px; font-size: 12px;
+  background: color-mix(in srgb, var(--accent) 6%, var(--surface));
+  border-bottom: 1px solid var(--border);
+}
+#ctx-strip[hidden] { display: none; }
+.ctx-back {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--surface2); border: 1px solid var(--border); border-radius: 6px;
+  padding: 3px 10px; color: var(--text); text-decoration: none;
+}
+.ctx-back:hover { border-color: var(--accent); }
+.ctx-lbl, .ctx-none { color: var(--muted); }
+.ctx-div { width: 1px; height: 16px; background: var(--border); }
+.ctx-steps { display: flex; gap: 4px; margin-left: auto; }
+.ctx-step {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 26px; height: 24px; border-radius: 6px; font-size: 15px;
+  background: var(--surface2); border: 1px solid var(--border);
+  color: var(--text); text-decoration: none;
+}
+.ctx-step:hover { border-color: var(--accent); }
+.ctx-step.disabled { opacity: 0.35; }

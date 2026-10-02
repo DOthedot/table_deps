@@ -13,6 +13,9 @@ serves files and `/api/scan` (pre-scanned project data from `table-deps project-
 - `templates/project.html` + `static/js/project.js` — **Project view** (DAG).
 - `static/js/colors.js` — schema → colour palette shared by both views.
 - `static/js/sql_parser.js` — shared keyword/regex constants.
+- `static/js/nav.js`, `shell.js`, `inspector.js`, `query_context.js` — view navigation (see below).
+- `static/js/tour.js` + `static/css/tour.css` — first-visit welcome guide
+  (`docs/specs/2026-10-03-onboarding-guide.md`). Keep scenes in sync with the real UI.
 - `static/css/shared.css` — theme tokens (`:root`), header, sidebar, controls.
 
 ## Rules
@@ -20,10 +23,11 @@ serves files and `/api/scan` (pre-scanned project data from `table-deps project-
   (copies into `public/` for Vercel). `make verify` fails on drift.
 - **Frozen:** DAG layout, node box rendering (`renderBox`), simulations, edge routing,
   column tracing. Navigation, header, sidebar chrome are fair game.
-- Navigation between views is being redesigned — read
-  `docs/specs/2026-10-03-view-navigation.md` before touching it.
-- Current hand-off Project → Query: `openNodeInVisualizer()` in `project.js` writes
-  `localStorage['table_deps_viz_sql']` and opens `/` in a new tab; `visualizer.js` reads
-  and deletes it on load.
+- Navigation follows `docs/specs/2026-10-03-view-navigation.md` (option A).
+  - `nav.js` is pure, DOM-free logic. **Change it test-first** in `tests/js/nav.test.js`
+    (`make test-js`).
+  - Hand-off: the Project view writes a snapshot to `sessionStorage['table_deps_project']`
+    after every load. Navigation is same-tab (`/?p=…&t=…`, `/project?p=…&sel=…`).
+  - `shell.js` (header, ⌘K), `inspector.js` (Project view), `query_context.js` (Query view).
 - No build step, no bundler: plain `<script>` tags, D3 v7 from CDN.
 - Verify UI changes in a real browser (`make project-ui`), not just `node --check`.

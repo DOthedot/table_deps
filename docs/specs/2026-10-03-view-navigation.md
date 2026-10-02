@@ -1,6 +1,6 @@
 # Spec: View navigation rework (Project view ⇄ Query view)
 
-- **Status:** Draft, awaiting a choice between A and B
+- **Status:** Accepted: **A** chosen 2026-10-03, implemented on `feat/view-navigation` (A6 deferred)
 - **Date:** 2026-10-03
 - **Mockup:** [`mockups/view-navigation.html`](mockups/view-navigation.html), which is interactive.
   Open it in a browser and switch between *Today*, *A* and *B* at the top right.
@@ -22,7 +22,7 @@ The two views are separate pages that barely know about each other:
 - One obvious, always-visible way to switch views.
 - Discoverable drill-down from a node to its query, in the **same tab**, with a working back button.
 - The Query view knows its source file and lets you hop to upstream/downstream files.
-- URLs you can share or reload (`/project?p=…&sel=…`, `/query?p=…&t=…`).
+- URLs you can share or reload (`/project?p=…&sel=…`, `/?p=…&t=…`).
 
 ## Non-goals
 - **No changes to the DAG or graph rendering**: layout, `renderBox`, simulations, edge
@@ -53,8 +53,8 @@ The two pages stay separate. This is a much smaller change than merging `project
   the SQL from the node, render the context strip, and mark project tables.
 - **Project view:** on load, restore from `sessionStorage` instead of showing the empty
   state. `sel` reselects the node. Zoom transform is saved alongside it.
-- **Routes:** add `/query` to `server.py` and `vercel.json`. Keep `/` and `/visualizer`
-  as aliases for the Query view.
+- **Routes (as built):** the Query view stays at `/` (`/?p=…&t=…`), so neither `server.py`
+  nor `vercel.json` needed new routes. `/visualizer` is still an alias.
 
 ### Open questions
 1. Which page should `/` be once a project is loaded: Project or Query?
@@ -63,6 +63,28 @@ The two pages stay separate. This is a much smaller change than merging `project
 3. Is `sessionStorage` size enough for large projects (≈5 MB, which is SQL text for
    hundreds of files)? If not, fall back to IndexedDB.
 4. Keep A6 (↗ badge inside the graph), or is that too close to "changing the graph"?
+
+### As built
+| Piece | File |
+|---|---|
+| Pure model: snapshot, URLs, context, search, `resolveQueryTarget` | `static/js/nav.js` (tested in `tests/js/nav.test.js`) |
+| Header switch, breadcrumb, ⌘K palette, keys `1`/`2` | `static/js/shell.js` |
+| Inspector drawer | `static/js/inspector.js` |
+| Query-view context strip, source note, scratch mode | `static/js/query_context.js` |
+| Glue | `project.js` (`selectNode`, `onProjectLoaded`, init), `visualizer.js` (load handler) |
+| Footer ribbon "Crafted by DOthedot · GitHub" | both templates + `shared.css` |
+
+Decisions taken while building:
+- Open question 1: `/` stays the Query view.
+- Open question 2: the inspector overlays the DAG at the top right. Its height is capped so
+  it never covers the zoom controls or the search box. Chips in the inspector pan the DAG to the chosen node.
+- Open question 4 (A6 ↗ badge): **deferred**, so graph rendering stays untouched.
+- `resolveQueryTarget`: Query tab / `2` opens the **selected** node, else the **last opened**
+  file, else a scratch query.
+- When the Query view is opened from a project, it pre-assigns schema colours in the same
+  sorted order as the Project view, so a schema has one colour in both views.
+- A `/project?p=kimball_retail` link with no loaded project loads the built-in example.
+  This makes the demo links shareable.
 
 ## Proposal B: Split view
 Selecting a node opens its query graph in a right pane next to the DAG.
@@ -74,7 +96,7 @@ laptops, and running two D3 simulations on one page needs the larger
 - [ ] The view switch is visible in the header on both pages, and `1`/`2` work.
 - [ ] A single click on a node opens the inspector, and its button opens the query in the same tab.
 - [ ] Browser back from the Query view restores the DAG, with selection and no re-scan.
-- [ ] Reloading `/query?p=…&t=…` in the same tab shows the same file.
+- [ ] Reloading `/?p=…&t=…` in the same tab shows the same file.
 - [ ] The Query view shows a breadcrumb and a context strip, and its chips navigate.
 - [ ] Pasting SQL with no project shows `Scratch query`, and nothing breaks.
 - [ ] DAG and graph rendering are visually identical to before (screenshot comparison).

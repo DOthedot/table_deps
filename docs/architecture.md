@@ -36,20 +36,24 @@ table_deps/
   frontend_service/
     server.py             # stdlib HTTP: /, /project, /api/scan, /static
     templates/            # visualizer.html (Query view), project.html (Project view)
-    static/js/            # visualizer.js, project.js, colors.js, sql_parser.js, kimball_example.js
+    static/js/            # visualizer.js, project.js, colors.js, sql_parser.js, kimball_example.js,
+                          # nav.js (pure, tested), shell.js, inspector.js, query_context.js
     static/css/           # shared.css (tokens + chrome), visualizer.css, project.css
 public/                   # GENERATED mirror for Vercel — `make sync-public`
 test_projects/            # kimball_retail, forecast_monthly, data_vault fixtures
 ui_examples/              # standalone queries for the Query view
+tests/js/                 # node:test unit tests for nav.js
 ```
 
-## The two views and how they connect (today)
-| From → To | Mechanism | Problem |
-|---|---|---|
-| Query → Project | Sidebar link `/project` | Lands on an empty Project view; project must be re-opened |
-| Project → Query | Double-click node → `localStorage` → `window.open('/')` | Hidden gesture, new tab, no way back, Query view doesn't know its source file |
-
-This is being redesigned — see `docs/specs/2026-10-03-view-navigation.md`.
+## How the two views connect
+Both pages share one header (Project | Query switch, breadcrumb, ⌘K) from `shell.js`.
+```
+Project view ── click node ─▶ inspector ── Open / dbl-click / ↵ ──▶ /?p=<proj>&t=<file>
+     ▲   writes sessionStorage snapshot                                  │ reads snapshot →
+     └──────────── Esc / ← / breadcrumb / key 1 ◀────────────────────────┘ SQL + context strip
+```
+`nav.js` holds the rules (URLs, snapshot, reads-from / used-by, prev/next). Design and
+decisions are in `docs/specs/2026-10-03-view-navigation.md`.
 
 ## Adding a feature
 1. `/spec` → design doc in `docs/specs/`.
