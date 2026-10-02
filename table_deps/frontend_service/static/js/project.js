@@ -357,6 +357,7 @@ const tooltip   = document.getElementById('tooltip');
 const container = document.getElementById('graph-container');
 
 let gMain, zoomBeh, currentSim = null, currentData = null, hlId = null, _firstLoad = true;
+let currentProject = null, _snap = null, _restoreOnLoad = null; // _restoreOnLoad: { sel } from the URL, consumed once
 let _nodeSel = null, _edgeSel = null, _depsOf = null, _rdepsOf = null;
 let _nodeById = null, _colRowEls = new Map(); // nodeId → Map(colName → {hitRect, text, color})
 
@@ -424,8 +425,7 @@ function renderGraph(data) {
         openNodeInVisualizer(d);
         return;
       }
-      hlId = (hlId === d.id) ? null : d.id;
-      syncListHighlight(hlId);
+      selectNode(hlId === d.id ? null : d.id);
     });
 
   _nodeSel = nodeSel; _edgeSel = edgeSel; _depsOf = depsOf; _rdepsOf = rdepsOf;
@@ -485,8 +485,52 @@ function openNodeInVisualizer(node) {
     alert(`No SQL content available for ${node.id}`);
     return;
   }
-  localStorage.setItem('table_deps_viz_sql', sql);
-  window.open('/', '_blank');
+  TDShell.go(TDNav.queryUrl(currentProject, node.id));
+}
+
+// ── Selection + inspector ─────────────────────────
+function selectNode(id, { reveal = false } = {}) {
+  hlId = id && _nodeById?.has(id) ? id : null;
+  syncListHighlight(hlId);
+  const ctx = hlId && _snap && TDNav.context(_snap, hlId);
+  if (ctx) {
+    TDInspector.show(container, ctx, {
+      onOpen: nid => openNodeInVisualizer(_nodeById.get(nid)),
+      onSelect: nid => selectNode(nid, { reveal: true }),
+      onClose: () => selectNode(null),
+    });
+    svgD3.selectAll('.box-node').filter(d => d.id === hlId)
+      .select('.node-bg')
+      .transition().duration(100).attr('stroke-width', 4)
+      .transition().duration(250).attr('stroke-width', 1.5);
+    if (reveal) {
+      const n = _nodeById.get(hlId);
+      svgD3.transition().duration(400).call(zoomBeh.translateTo, n._cx, n._cy);
+    }
+  } else {
+    TDInspector.hide();
+  }
+  if (currentProject) history.replaceState(null, '', TDNav.projectUrl(currentProject, hlId));
+  updateCrumb();
+}
+
+function updateCrumb() {
+  if (!currentProject) return TDShell.setCrumb([{ label: 'No project loaded', muted: true }]);
+  TDShell.setCrumb([{ label: currentProject }, ...(hlId ? [{ label: hlId, muted: true }] : [])]);
+}
+
+// Called after every successful load (server, folder, drop, example, restore).
+function onProjectLoaded(name) {
+  currentProject = name;
+  _snap = TDNav.snapshot(name, currentData.nodes, currentData.edges);
+  TDNav.saveSnapshot(sessionStorage, _snap); // channel to the Query view; may fail on quota
+  const restore = _restoreOnLoad; _restoreOnLoad = null;
+  const view = restore && TDNav.loadView(sessionStorage, name);
+  if (view) {
+    _firstLoad = false; // keep the user's zoom instead of fit-to-view
+    svgD3.call(zoomBeh.transform, d3.zoomIdentity.translate(view.x, view.y).scale(view.k));
+  }
+  selectNode(restore?.sel || null);
 }
 
 // ── Box rendering ─────────────────────────────────
@@ -773,10 +817,6 @@ function updateSidebar(data, projectName) {
   document.getElementById('st-edges').textContent  = edges.length;
   document.getElementById('st-levels').textContent = maxLevel + 1;
 
-  const badge = document.getElementById('project-badge');
-  badge.textContent = '\ud83d\udcc1 ' + projectName;
-  badge.style.display = '';
-
   // Table list sorted by level then alphabetically
   const ul = document.getElementById('table-list');
   ul.innerHTML = '';
@@ -792,12 +832,7 @@ function updateSidebar(data, projectName) {
         <span class="lv-badge">L${node._level || 0}</span>`;
       li.addEventListener('click', (ev) => {
         if (ev.detail >= 2) { openNodeInVisualizer(node); return; }
-        hlId = hlId === node.id ? null : node.id;
-        syncListHighlight(hlId);
-        svgD3.selectAll('.box-node').filter(d => d.id === node.id)
-          .select('.node-bg')
-          .transition().duration(100).attr('stroke-width', 4)
-          .transition().duration(250).attr('stroke-width', 1.5);
+        selectNode(hlId === node.id ? null : node.id, { reveal: true });
       });
       ul.appendChild(li);
     });
@@ -849,6 +884,7 @@ function processGraphData(data, projectName) {
   [...new Set(data.nodes.map(n => n.schema))].sort().forEach(s => schemaColor(s));
   renderGraph(data);
   updateSidebar(data, projectName);
+  onProjectLoaded(projectName);
 }
 
 // ═══════════════════════════════════════════════════
@@ -868,6 +904,7 @@ function loadGraph(data) {
   dz.querySelector('.dz-icon').textContent  = '\u2705';
   dz.querySelector('.dz-label').textContent = data.project_name || 'project';
   dz.querySelector('.dz-hint').textContent  = `${data.nodes.length} tables \u00b7 ${data.edges.length} deps`;
+  onProjectLoaded(data.project_name || 'project');
 }
 
 // ═══════════════════════════════════════════════════
@@ -961,10 +998,13 @@ async function readDirEntry(dirEntry, acc) {
 // ═══════════════════════════════════════════════════
 
 document.getElementById('clear-btn').addEventListener('click', () => {
-  currentData = null; hlId = null;
+  currentData = null; hlId = null; currentProject = null; _snap = null;
+  TDInspector.hide();
+  TDNav.clearSnapshot(sessionStorage);
+  history.replaceState(null, '', TDNav.projectUrl(null));
+  updateCrumb();
   svgD3.selectAll('*').remove();
   ['stats-section','tables-section'].forEach(id => document.getElementById(id).style.display = 'none');
-  document.getElementById('project-badge').style.display = 'none';
   const dz = document.getElementById('drop-zone');
   dz.classList.remove('loaded');
   dz.querySelector('.dz-icon').textContent  = '\ud83d\udcc2';
@@ -981,11 +1021,36 @@ document.getElementById('clear-btn').addEventListener('click', () => {
 // ═══════════════════════════════════════════════════
 
 window.addEventListener('load', async () => {
-  const loaded = await loadFromServer();
-  if (!loaded) {
-    // Show normal empty state for folder picker
-    document.getElementById('empty-state').style.display = 'flex';
-  }
+  const { p, sel } = TDNav.parseParams(location.search);
+  _restoreOnLoad = { sel };
+  if (await loadFromServer()) return;
+  const snap = TDNav.loadSnapshot(sessionStorage, p || undefined);
+  if (snap) return loadGraph(snap);
+  if (p === 'kimball_retail') return processGraphData(buildGraphFromFiles(KIMBALL_EXAMPLE_FILES), p);
+  _restoreOnLoad = null;
+  updateCrumb();
+  document.getElementById('empty-state').style.display = 'flex';
+});
+
+TDShell.init({
+  view: 'project',
+  project: () => currentProject,
+  projectSel: () => hlId,
+  queryTarget: () => TDNav.resolveQueryTarget({
+    selected: hlId,
+    lastFile: TDNav.loadLastQuery(sessionStorage, currentProject),
+  }),
+  beforeLeave: () => {
+    if (currentProject && svgEl) TDNav.saveView(sessionStorage, currentProject, d3.zoomTransform(svgEl));
+  },
+  reveal: id => selectNode(id, { reveal: true }),
+});
+
+// Enter opens the selected node's query; Esc deselects
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+  if (e.key === 'Enter' && hlId) { e.preventDefault(); openNodeInVisualizer(_nodeById.get(hlId)); }
+  if (e.key === 'Escape' && hlId) selectNode(null);
 });
 
 window.addEventListener('resize', () => { if (currentData) fitToView(); });

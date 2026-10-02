@@ -2,7 +2,7 @@
 # Hooks call it, CI calls it, you call it — so local and CI never drift.
 
 .DEFAULT_GOAL := help
-.PHONY: help install verify fmt fmt-check lint typecheck check-js check-public sync-public test cov ui project-ui
+.PHONY: help install verify fmt fmt-check lint typecheck check-js check-public sync-public test test-js cov ui project-ui
 
 FRONTEND := table_deps/frontend_service
 
@@ -13,7 +13,7 @@ help: ## Show this help
 install: ## Install runtime + dev dependencies
 	uv sync --extra dev
 
-verify: fmt-check lint typecheck check-js check-public test ## Full quality suite (the source of truth)
+verify: fmt-check lint typecheck check-js check-public test test-js ## Full quality suite (the source of truth)
 	@echo "✓ verify passed"
 
 fmt: ## Auto-format Python
@@ -47,6 +47,9 @@ sync-public: ## Copy frontend source into public/ (Vercel static build)
 
 test: ## Run tests
 	uv run pytest -q
+
+test-js: ## Run frontend unit tests (node:test, no deps)
+	node --test tests/js/*.test.js
 
 cov: ## Run tests with coverage
 	uv run pytest --cov=table_deps --cov-report=term-missing

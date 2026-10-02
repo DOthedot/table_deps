@@ -1043,10 +1043,12 @@ document.getElementById('sql-input').addEventListener('keydown', e => {
   if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') analyze();
 });
 document.getElementById('example-btn').addEventListener('click', () => {
+  if (TDQueryContext.isBound()) TDQueryContext.toScratch();
   document.getElementById('sql-input').value = EXAMPLE_SQL;
   analyze();
 });
 document.getElementById('clear-btn').addEventListener('click', () => {
+  if (TDQueryContext.isBound()) TDQueryContext.toScratch();
   document.getElementById('sql-input').value = '';
   svgD3.selectAll('*').remove();
   document.getElementById('empty-state').querySelector('p').textContent = 'Paste a SQL query and click Analyze';
@@ -1058,11 +1060,7 @@ window.addEventListener('resize', () => {
   if (document.getElementById('sql-input').value.trim()) analyze();
 });
 
-// Project page opens visualizer by writing SQL to localStorage
+// Opened from the Project view as /?p=<project>&t=<table>: load that file's SQL
 window.addEventListener('load', () => {
-  const sql = localStorage.getItem('table_deps_viz_sql');
-  if (!sql) return;
-  localStorage.removeItem('table_deps_viz_sql');
-  document.getElementById('sql-input').value = sql;
-  analyze();
+  if (TDQueryContext.init()) analyze();
 });

@@ -3,31 +3,27 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>table-deps — Project Overview</title>
+  <title>Project · table-deps</title>
   <link rel="stylesheet" href="/static/css/shared.css" />
   <link rel="stylesheet" href="/static/css/project.css" />
+  <link rel="stylesheet" href="/static/css/tour.css" />
 </head>
 <body>
 
 <header>
   <h1>&#x2b21; table-deps</h1>
-  <span class="header-sub">Project DAG</span>
-  <div id="project-badge"></div>
+  <nav class="view-switch" aria-label="Views">
+    <a id="tab-project" href="/project" title="Project view (1)"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="3" cy="8" r="2"/><circle cx="13" cy="4" r="2"/><circle cx="13" cy="12" r="2"/><line x1="5" y1="8" x2="11" y2="4"/><line x1="5" y1="8" x2="11" y2="12"/></svg>Project <kbd>1</kbd></a>
+    <a id="tab-query" href="/" title="Query view (2)"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="3" width="5" height="4" rx="1"/><rect x="9" y="9" width="5" height="4" rx="1"/><line x1="4.5" y1="7" x2="4.5" y2="11"/><line x1="4.5" y1="11" x2="9" y2="11"/></svg>Query <kbd>2</kbd></a>
+  </nav>
+  <div id="crumb" class="crumb" aria-label="Location"></div>
   <div class="spacer"></div>
-  <span class="tip">Scroll to zoom &middot; Pan canvas &middot; Drag nodes to reposition &middot; Hover to trace deps</span>
+  <button id="help-btn" class="help-btn" type="button" title="How to use table-deps (?)" aria-label="How to use table-deps">?</button>
+  <button id="jump-btn" class="jump-btn" type="button" title="Jump to table (&#x2318;K / Ctrl+K)">&#x2315; Jump to table&hellip; <kbd>&#x2318;K</kbd></button>
 </header>
 
 <main>
   <aside id="sidebar">
-
-    <a href="/" class="nav-btn">
-      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-        <rect x="2" y="3" width="5" height="4" rx="1"/><rect x="9" y="9" width="5" height="4" rx="1"/>
-        <line x1="4.5" y1="7" x2="4.5" y2="11"/><line x1="4.5" y1="11" x2="9" y2="11"/>
-      </svg>
-      SQL Visualizer
-      <span class="nav-arrow">&rarr;</span>
-    </a>
 
     <div class="section">
       <div class="section-label">Project Directory</div>
@@ -93,7 +89,7 @@
       <div class="tt-row"><span>Used by (project)</span><span class="tt-val" id="tt-out">0</span></div>
       <div class="tt-row"><span>External refs</span><span class="tt-val" id="tt-ext">0</span></div>
       <div class="tt-row"><span>DAG level</span><span class="tt-val" id="tt-lv">&mdash;</span></div>
-      <div style="margin-top:8px;font-size:10px;color:var(--muted);border-top:1px solid var(--border);padding-top:6px">Double-click to open in visualizer</div>
+      <div style="margin-top:8px;font-size:10px;color:var(--muted);border-top:1px solid var(--border);padding-top:6px">Click to inspect &middot; double-click to open query</div>
     </div>
     <div id="search-box">
       <div id="search-wrap">
@@ -115,11 +111,22 @@
     </div>
   </div>
 </main>
+<footer class="ribbon">
+  <span class="ribbon-tip">Scroll to zoom &middot; Drag nodes &middot; Hover to trace deps &middot; Click to inspect &middot; <kbd>/</kbd> search</span>
+  <span class="spacer"></span>
+  <span>Crafted by <a href="https://github.com/DOthedot" target="_blank" rel="noopener">DOthedot</a></span>
+  <span class="ribbon-sep">&middot;</span>
+  <a class="ribbon-gh" href="https://github.com/DOthedot/table_deps" target="_blank" rel="noopener"><svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>GitHub</a>
+</footer>
 
 <script src="https://d3js.org/d3.v7.min.js"></script>
 <script src="/static/js/colors.js"></script>
 <script src="/static/js/sql_parser.js"></script>
 <script src="/static/js/kimball_example.js"></script>
+<script src="/static/js/nav.js"></script>
+<script src="/static/js/shell.js"></script>
+<script src="/static/js/tour.js"></script>
+<script src="/static/js/inspector.js"></script>
 <script src="/static/js/project.js"></script>
 <script>
 // Sidebar toggle

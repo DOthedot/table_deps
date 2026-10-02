@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Welcome Guide Mockup</title>
+<style>
+/* Theme tokens copied from table_deps/frontend_service/static/css/shared.css */
+:root {
+  --bg:#0d1117; --surface:#161b22; --surface2:#21262d; --border:#30363d;
+  --text:#e6edf3; --muted:#8b949e; --accent:#58a6ff; --green:#3fb950;
+  --orange:#d29922; --red:#f85149; --purple:#bc8cff; --canvas:#f4f1ec;
+  --pin:#ffea7f; --doc-bg:#05080c;
+  --mono:'SF Mono','Fira Code',ui-monospace,monospace;
+  --src:#f85149; --dim:#58a6ff; --fact:#3fb950; --rpt:#d29922;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--doc-bg);color:var(--text);font:14px/1.45 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;padding:20px 16px 40px}
+button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
+kbd{font:11px var(--mono);background:var(--surface2);border:1px solid var(--border);border-bottom-width:2px;border-radius:4px;padding:0 5px;color:var(--muted)}
+
+/* ── Document chrome ── */
+.doc-head{max-width:1500px;margin:0 auto 16px;display:flex;flex-wrap:wrap;align-items:flex-end;gap:16px}
+.doc-head h1{font-size:20px;font-weight:650}
+.doc-head p{color:var(--muted);font-size:13px;max-width:660px}
+.ctrls{display:flex;gap:6px;margin-left:auto;flex-wrap:wrap}
+.ctrls button{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:7px 12px;font-size:12.5px;color:var(--muted)}
+.ctrls button:hover{color:var(--text);border-color:var(--accent)}
+.ctrls button.on{color:var(--text);background:var(--surface2)}
+.layout{max-width:1500px;margin:0 auto;display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:16px}
+@media (max-width:1100px){.layout{grid-template-columns:1fr}}
+
+/* ── Fake browser + app background ── */
+.browser{border:1px solid var(--border);border-radius:12px;overflow:hidden;background:var(--bg);min-width:0}
+.chrome{display:flex;align-items:center;gap:8px;background:var(--surface);padding:8px 12px;border-bottom:1px solid var(--border)}
+.dots{display:flex;gap:6px}.dots i{width:10px;height:10px;border-radius:50%;background:#30363d}
+.addr{flex:1;background:var(--bg);border:1px solid var(--border);border-radius:16px;padding:4px 14px;font:12px var(--mono);color:var(--muted)}
+.app{height:700px;position:relative;display:flex;flex-direction:column;overflow:hidden}
+.app header{display:flex;align-items:center;gap:12px;padding:9px 16px;background:var(--surface);border-bottom:1px solid var(--border)}
+.logo{font:700 15px var(--mono);color:var(--accent)}
+.seg{display:flex;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:2px}
+.seg span{padding:4px 11px;border-radius:6px;font-size:12.5px;font-weight:600;color:var(--muted)}
+.seg span.on{background:var(--surface2);color:var(--text);box-shadow:inset 0 0 0 1px var(--border)}
+.crumb{font:12.5px var(--mono);color:var(--text)}
+.spacer{flex:1}
+.help-btn{width:28px;height:28px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--muted);font-weight:700;position:relative}
+.help-btn:hover{color:var(--text);border-color:var(--accent)}
+.help-btn.pulse::after{content:'';position:absolute;inset:-4px;border-radius:10px;border:2px solid var(--accent);animation:ring 1.6s ease-out infinite}
+@keyframes ring{0%{opacity:.9;transform:scale(.9)}100%{opacity:0;transform:scale(1.25)}}
+.jump{display:flex;align-items:center;gap:10px;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:5px 10px;font-size:12px;color:var(--muted)}
+.main{flex:1;display:flex;min-height:0}
+.sb{width:250px;background:var(--surface);border-right:1px solid var(--border);padding:14px}
+.slabel{font-size:10.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin-bottom:9px}
+.ta{height:150px;border:1px solid var(--border);border-radius:6px;background:var(--surface2);padding:8px;font:11px var(--mono);color:var(--muted)}
+.btnrow{display:flex;gap:6px;margin-top:8px}
+.b{flex:1;text-align:center;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:6px;font-size:12px;font-weight:600}
+.b.pri{background:var(--accent);color:#0d1117;border-color:var(--accent)}
+.canvas{flex:1;background-color:var(--canvas);background-image:radial-gradient(#d6d0c4 1px,transparent 1px);background-size:22px 22px;display:flex;align-items:center;justify-content:center;color:#57606a;flex-direction:column;gap:6px}
+.canvas .ic{font-size:32px;opacity:.5}
+.ribbon{display:flex;gap:8px;padding:5px 16px;font-size:11px;color:var(--muted);background:var(--surface);border-top:1px solid var(--border)}
+.ribbon b{color:var(--text)}
+
+/* ── Tour overlay ── */
+.backdrop{position:absolute;inset:0;background:rgba(1,4,9,.55);backdrop-filter:blur(2px);display:flex;align-items:center;justify-content:center;z-index:50;animation:fadein .25s ease}
+@keyframes fadein{from{opacity:0}to{opacity:1}}
+.tour{width:580px;max-width:calc(100% - 32px);background:var(--surface);border:1px solid var(--border);border-radius:14px;box-shadow:0 24px 60px rgba(0,0,0,.6);overflow:hidden;animation:rise .3s cubic-bezier(.2,.8,.2,1)}
+@keyframes rise{from{opacity:0;transform:translateY(12px) scale(.98)}to{opacity:1;transform:none}}
+.tour-top{display:flex;align-items:center;gap:8px;padding:12px 16px 0}
+.tour-top .count{font-size:11px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.tour-top .x{margin-left:auto;width:26px;height:26px;border-radius:6px;color:var(--muted)}
+.tour-top .x:hover{background:var(--surface2);color:var(--text)}
+.stage{position:relative;margin:10px 16px 0;height:260px;border-radius:10px;overflow:hidden;border:1px solid var(--border);background-color:var(--canvas);background-image:radial-gradient(#d9d3c7 1px,transparent 1px);background-size:18px 18px}
+.stage.dark{background:var(--bg);background-image:none}
+.tour-body{padding:14px 20px 4px}
+.tour-body h2{font-size:17px;font-weight:650;margin-bottom:6px}
+.tour-body p{color:#c9d1d9;font-size:13.5px;line-height:1.55}
+.tour-foot{display:flex;align-items:center;gap:8px;padding:14px 16px 16px}
+.pips{display:flex;gap:6px}
+.pips button{width:8px;height:8px;border-radius:50%;background:var(--border);padding:0}
+.pips button.on{background:var(--accent);width:22px;border-radius:4px;transition:width .2s}
+.tour-foot .skip{color:var(--muted);font-size:12.5px;padding:7px 10px;border-radius:6px;margin-left:auto}
+.tour-foot .skip:hover{color:var(--text)}
+.tour-foot .nav{background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:7px 14px;font-size:12.5px;font-weight:600}
+.tour-foot .nav.pri{background:var(--accent);border-color:var(--accent);color:#0d1117}
+.tour-foot .nav:hover{filter:brightness(1.1)}
+.cta-row{display:flex;gap:8px;margin-left:auto}
+
+/* ── Stage primitives (absolute, px inside a 546×260 stage) ── */
+.st{position:absolute}
+.mb{position:absolute;width:96px;height:52px;border-radius:5px;border:1.5px solid var(--c);background:color-mix(in srgb,var(--c) 14%,#fff);box-shadow:0 2px 6px rgba(0,0,0,.08);overflow:hidden}
+.mb::before{content:attr(data-n);display:block;height:15px;padding:1px 6px;font:700 8.5px/13px var(--mono);color:var(--c);background:color-mix(in srgb,var(--c) 28%,#fff)}
+.mb i{display:block;height:3px;border-radius:2px;margin:5px 8px 0;background:var(--c);opacity:.35}
+.mb i:nth-child(2){width:60%}.mb i:nth-child(3){width:75%}
+.mb.hl{box-shadow:0 0 0 3px color-mix(in srgb,var(--c) 45%,transparent)}
+.file{position:absolute;display:flex;align-items:center;gap:6px;background:#fff;border:1px solid #d0d7de;border-radius:6px;padding:4px 8px;font:10.5px var(--mono);color:#24292f;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.file::before{content:'';width:9px;height:11px;border-radius:2px;background:var(--c)}
+svg.edges{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+svg.edges path{fill:none;stroke:#8c959f;stroke-width:1.4}
+svg.edges path.hi{stroke:var(--accent);stroke-width:2}
+.lbl{position:absolute;font:700 8px var(--mono);color:#57606a;background:var(--canvas);padding:0 2px}
+.cap{position:absolute;font:10px var(--mono);color:#57606a}
+.cursor{position:absolute;width:18px;height:18px;z-index:5;filter:drop-shadow(0 1px 1px rgba(0,0,0,.35))}
+.ripple{position:absolute;width:30px;height:30px;margin:-15px 0 0 -15px;border-radius:50%;border:2px solid var(--accent);opacity:0;z-index:4}
+.mini-sb{position:absolute;left:0;top:0;bottom:0;width:178px;background:var(--surface);border-right:1px solid var(--border);padding:12px}
+.mini-ta{height:96px;border:1px solid var(--border);border-radius:5px;background:var(--surface2);padding:7px;font:9.5px/1.6 var(--mono);color:#c9d1d9}
+.mini-ta span{display:block;white-space:nowrap}
+.mini-btn{margin-top:8px;display:inline-block;background:var(--accent);color:#0d1117;font:700 10px sans-serif;padding:5px 12px;border-radius:5px}
+.folder{position:absolute;width:118px;height:84px;border-radius:8px;background:#fff;border:1.5px dashed #8c959f;display:flex;flex-direction:column;align-items:center;justify-content:center;font:10px sans-serif;color:#57606a;gap:3px}
+.folder b{font:700 11px var(--mono);color:#24292f}
+.ins{position:absolute;right:10px;top:10px;width:168px;height:182px;background:var(--surface);border:1px solid var(--border);border-top:3px solid var(--fact);border-radius:8px;padding:9px;box-shadow:0 8px 20px rgba(0,0,0,.35)}
+.ins .t{font:700 10.5px var(--mono);color:var(--text)}
+.ins .s{font:8.5px var(--mono);color:var(--muted);margin:2px 0 8px}
+.ins .k{font:700 7.5px sans-serif;color:var(--muted);letter-spacing:.08em;margin:6px 0 4px}
+.chipz{display:flex;flex-wrap:wrap;gap:3px}
+.chipz span{font:8px var(--mono);color:var(--text);background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:0 5px}
+.ins .open{margin-top:12px;background:var(--accent);color:#0d1117;font:700 9px sans-serif;text-align:center;padding:5px;border-radius:5px}
+.qv{position:absolute;inset:0;background-color:var(--canvas);background-image:radial-gradient(#d9d3c7 1px,transparent 1px);background-size:18px 18px}
+.qv-bar{position:absolute;left:0;right:0;top:0;height:30px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;padding:0 10px;font:9.5px var(--mono);color:var(--muted)}
+.qv-bar b{color:var(--text);font-weight:500}
+.qv-bar .back{background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:1px 6px;color:var(--text)}
+.toast{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:16px;padding:4px 12px;font-size:11px;white-space:nowrap}
+.mhead{position:absolute;left:0;right:0;top:0;height:40px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;padding:0 12px}
+.mseg{position:relative;display:flex;background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:2px}
+.mseg span{position:relative;z-index:1;width:70px;text-align:center;font:600 10.5px sans-serif;color:var(--muted);padding:3px 0}
+.mseg .ind{position:absolute;top:2px;bottom:2px;left:2px;width:70px;border-radius:5px;background:var(--surface2);box-shadow:inset 0 0 0 1px var(--border)}
+.mbody{position:absolute;left:0;right:0;top:40px;bottom:58px;display:flex;align-items:center;justify-content:center;font:12px sans-serif;color:var(--muted)}
+.mbody .v{position:absolute;display:flex;flex-direction:column;align-items:center;gap:6px}
+.mbody .v b{color:var(--text);font-size:13px}
+.mpal{position:absolute;left:50%;top:56px;width:250px;margin-left:-125px;background:var(--surface);border:1px solid var(--border);border-radius:9px;box-shadow:0 12px 30px rgba(0,0,0,.6);overflow:hidden;z-index:3}
+.mpal .in{padding:8px 10px;border-bottom:1px solid var(--border);font:11px var(--mono);color:var(--text)}
+.mpal .r{display:flex;align-items:center;gap:6px;padding:5px 10px;font:10px var(--mono);color:var(--text)}
+.mpal .r.on{background:var(--surface2)}
+.mpal .r i{width:6px;height:6px;border-radius:50%;background:var(--c)}
+.keys{position:absolute;left:0;right:0;bottom:12px;display:flex;justify-content:center;gap:14px}
+.key{display:flex;flex-direction:column;align-items:center;gap:4px;font:9.5px sans-serif;color:var(--muted)}
+.key kbd{font-size:13px;padding:4px 10px;color:var(--text);border-radius:6px;min-width:34px;text-align:center}
+
+/* Reduced motion: show each scene's final frame, no looping */
+.reduced .stage *,.reduced .stage *::before{animation:none!important}
+@media (prefers-reduced-motion: reduce){.stage *,.stage *::before{animation:none!important}}
+
+/* ── Notes panel ── */
+.notes{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 18px;align-self:start;position:sticky;top:16px}
+.notes h2{font-size:15px;margin-bottom:4px}
+.notes .verdict{font-size:12px;color:var(--muted);margin-bottom:12px}
+.notes h3{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:16px 0 8px}
+.notes ul{list-style:none;display:flex;flex-direction:column;gap:8px;font-size:12.8px}
+.notes ul li{position:relative;padding-left:14px}
+.notes ul li::before{content:'›';color:var(--accent);position:absolute;left:0}
+.notes li .pin{vertical-align:-3px}
+.notes ol{padding-left:18px;font-size:12.8px;display:flex;flex-direction:column;gap:4px;color:#c9d1d9}
+.pin{display:inline-flex;align-items:center;justify-content:center;width:17px;height:17px;border-radius:50%;background:var(--pin);color:#1b1500;font:700 10px/1 sans-serif;box-shadow:0 0 0 3px #ffea7f33;flex-shrink:0}
+.q{font-size:12.5px;color:#ffd8a8}
+</style>
+</head>
+<body>
+
+<div class="doc-head">
+  <div>
+    <h1>table-deps · Welcome guide mockup</h1>
+    <p>A centered card on first visit. Five short scenes, each a looping animation built from CSS (no video files),
+       showing what to do and where. Dismissible, shown once, and reopened from <b>?</b> in the header.
+       The scenes are stand-ins; the real app is unchanged.</p>
+  </div>
+  <div class="ctrls">
+    <button id="c-replay">↻ Replay first visit</button>
+    <button id="c-land-q" class="on">Lands on Query (/)</button>
+    <button id="c-land-p">Lands on Project</button>
+    <button id="c-motion">Reduced motion: off</button>
+  </div>
+</div>
+
+<div class="layout">
+  <div class="browser">
+    <div class="chrome"><div class="dots"><i></i><i></i><i></i></div><div class="addr" id="addr">table-deps.vercel.app/</div></div>
+    <div class="app" id="app"></div>
+  </div>
+
+  <aside class="notes">
+    <h2>How it behaves</h2>
+    <div class="verdict">Option chosen: animated illustrations · centered card.</div>
+    <h3>When it shows</h3>
+    <ul>
+      <li>On the first visit to either page. "Seen" is remembered in this browser (<code>localStorage</code>).</li>
+      <li>Never again after ✕, Skip, Esc, a click on the backdrop, or the last step.</li>
+      <li><span class="pin">?</span>&nbsp;Reopen any time from the <b>?</b> button in the header, or the <kbd>?</kbd> key.</li>
+      <li>On a shared deep link (<code>?t=</code> or <code>?sel=</code>) it stays closed and the <b>?</b> button pulses instead, so a shared link opens straight to what was shared.</li>
+    </ul>
+    <h3>The five scenes</h3>
+    <ol>
+      <li>What table-deps is</li>
+      <li>Query view: paste SQL → Analyze</li>
+      <li>Project view: open a folder → DAG</li>
+      <li>Click a node → inspector → open its query</li>
+      <li>Shortcuts: <kbd>1</kbd> <kbd>2</kbd> <kbd>⌘K</kbd> <kbd>Esc</kbd></li>
+    </ol>
+    <h3>Controls</h3>
+    <ul>
+      <li><kbd>←</kbd> <kbd>→</kbd> or the dots change step; <kbd>Esc</kbd> closes.</li>
+      <li>Last step: <b>Explore example project</b> (opens Kimball) or <b>Paste my own SQL</b> (closes the guide and focuses the SQL box).</li>
+      <li>Reduced-motion users see a still final frame of each scene.</li>
+    </ul>
+    <h3>Cost</h3>
+    <ul>
+      <li>One new <code>tour.js</code> + <code>tour.css</code>, ~10 KB, no images or video. No changes to the graphs.</li>
+    </ul>
+    <h3>Open question</h3>
+    <div class="q">Should the help button be labelled "?" or "Guide"? "?" is compact; "Guide" is clearer for first-timers.</div>
+  </aside>
+</div>
+
+<script>
+// ── Keyframe factory: each element gets its own timeline within a 7s loop ──
+const LOOP = 7;
+const made = new Set();
+const sheet = document.head.appendChild(document.createElement('style')).sheet;
+function kf(name, body) { if (!made.has(name)) { made.add(name); sheet.insertRule(`@keyframes ${name}{${body}}`); } return name; }
+const anim = (name, extra = '') => `animation:${name} ${LOOP}s ${extra || 'ease'} infinite both;`;
+// appear at a% (pop | fade | slide | draw | type), stay until 88%, fade by 95%
+function at(kind, a) {
+  const b = Math.min(a + 6, 86);
+  const states = {
+    pop:   ['opacity:0;transform:scale(.6)', 'opacity:1;transform:scale(1)'],
+    fade:  ['opacity:0', 'opacity:1'],
+    slide: ['opacity:0;transform:translateX(-24px)', 'opacity:1;transform:none'],
+    draw:  ['stroke-dashoffset:1;opacity:1', 'stroke-dashoffset:0;opacity:1'],
+    type:  ['clip-path:inset(0 100% 0 0)', 'clip-path:inset(0 0 0 0)'],
+  }[kind];
+  const name = kf(`${kind}-${a}`, `0%,${a}%{${states[0]}} ${b}%{${states[1]}} 88%{${states[1]}} 95%,100%{${states[0].includes('dash') ? 'opacity:0' : states[0]}}`);
+  return anim(name, kind === 'type' ? `steps(${Math.max(4, (b - a) * 2)})` : 'ease');
+}
+// visible only between a% and b%
+const hash = s => [...s].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7).toString(36);
+function between(a, b, from = 'opacity:0', to = 'opacity:1') {
+  return anim(kf(`btw-${a}-${b}-${hash(from + to)}`,`0%,${a}%{${from}} ${a + 3}%,${b}%{${to}} ${b + 3}%,100%{${from}}`));
+}
+// keycap / button press at a%
+const press = a => anim(kf(`press-${a}`, `0%,${a}%{transform:scale(1);filter:none} ${a + 1.5}%{transform:scale(.88);filter:brightness(1.6)} ${a + 4}%,100%{transform:scale(1);filter:none}`));
+const ripple = a => anim(kf(`rip-${a}`, `0%,${a}%{opacity:0;transform:scale(.3)} ${a + 1}%{opacity:1;transform:scale(.4)} ${a + 6}%,100%{opacity:0;transform:scale(1.5)}`));
+const cursorSvg = `<svg viewBox="0 0 24 24"><path d="M3 2l7 19 2.5-7.5L20 11z" fill="#fff" stroke="#111" stroke-width="1.5" stroke-linejoin="round"/></svg>`;
+// cursor path: [[pct, x, y], ...]
+function cursorPath(id, pts) {
+  const frames = pts.map(([p, x, y]) => `${p}%{transform:translate(${x}px,${y}px);opacity:1}`).join(' ');
+  return anim(kf(`cur-${id}`, `0%{transform:translate(${pts[0][1]}px,${pts[0][2]}px);opacity:0} ${frames} 95%,100%{opacity:0}`), 'ease-in-out');
+}
+const box = (n, c, x, y, style = '', cls = '') => `<div class="mb ${cls}" data-n="${n}" style="--c:var(--${c});left:${x}px;top:${y}px;${style}"><i></i><i></i><i></i></div>`;
+const edge = (d, style = '', cls = '') => `<path pathLength="1" stroke-dasharray="1" class="${cls}" d="${d}" style="${style}"/>`;
+const curve = (x1, y1, x2, y2) => { const m = (x1 + x2) / 2; return `M${x1},${y1} C${m},${y1} ${m},${y2} ${x2},${y2}`; };
+
+// ── Scenes ───────────────────────────────────────────────────────────────────
+const SCENES = [
+  {
+    title: 'Welcome to table-deps',
+    text: 'See how your SQL tables depend on each other, as an interactive map. It all runs in your browser: no database, and nothing is uploaded.',
+    stage: () => `
+      <div class="file" style="--c:var(--src);left:26px;top:58px;${at('slide', 3)}">raw.orders.sql</div>
+      <div class="file" style="--c:var(--dim);left:26px;top:112px;${at('slide', 9)}">dim.customer.sql</div>
+      <div class="file" style="--c:var(--fact);left:26px;top:166px;${at('slide', 15)}">fact.sales.sql</div>
+      <div class="st" style="left:196px;top:104px;font:700 30px sans-serif;color:var(--accent);${at('pop', 24)}">→</div>
+      <svg class="edges">
+        ${edge(curve(354, 70, 420, 130), at('draw', 52))}
+        ${edge(curve(354, 186, 420, 130), at('draw', 56))}
+      </svg>
+      ${box('raw.orders', 'src', 258, 44, at('pop', 32))}
+      ${box('dim.customer', 'dim', 258, 160, at('pop', 38))}
+      ${box('fact.sales', 'fact', 420, 104, at('pop', 44))}
+      <div class="cap" style="left:262px;top:226px;${at('fade', 60)}">sources  →  facts  →  reports</div>`,
+  },
+  {
+    title: 'Paste a query, see its tables',
+    text: 'In the <b>Query view</b>, paste any SQL and press <b>Analyze</b> (or <kbd>Ctrl</kbd>+<kbd>↵</kbd>). Each table becomes a box, and each join becomes an arrow labelled with its type.',
+    dark: true,
+    stage: () => `
+      <div class="mini-sb">
+        <div class="slabel" style="font-size:8.5px">SQL Query</div>
+        <div class="mini-ta">
+          <span style="${at('type', 4)}">SELECT o.id, c.name</span>
+          <span style="${at('type', 12)}">FROM orders o</span>
+          <span style="${at('type', 20)}">JOIN customers c ON …</span>
+          <span style="${at('type', 28)}">LEFT JOIN payments p …</span>
+        </div>
+        <div class="mini-btn" style="${press(44)}">▶ Analyze</div>
+      </div>
+      <div class="st" style="left:178px;right:0;top:0;bottom:0;background-color:var(--canvas);background-image:radial-gradient(#d9d3c7 1px,transparent 1px);background-size:18px 18px"></div>
+      <svg class="edges">
+        ${edge('M298,128 L392,66', at('draw', 60))}
+        ${edge('M298,128 L392,190', at('draw', 63))}
+      </svg>
+      ${box('orders', 'fact', 214, 102, at('pop', 50))}
+      ${box('customers', 'dim', 392, 40, at('pop', 54))}
+      ${box('payments', 'src', 392, 164, at('pop', 57))}
+      <div class="lbl" style="left:330px;top:84px;${at('fade', 66)}">INNER</div>
+      <div class="lbl" style="left:334px;top:160px;${at('fade', 68)}">LEFT</div>
+      <div class="cursor" style="left:0;top:0;${cursorPath('q', [[34, 150, 210], [42, 40, 142], [46, 40, 142], [60, 120, 230]])}">${cursorSvg}</div>
+      <div class="ripple" style="left:48px;top:150px;${ripple(44)}"></div>`,
+  },
+  {
+    title: 'Open a whole project',
+    text: 'In the <b>Project view</b>, open a folder of <code>schema.table.sql</code> files. Each file becomes a node, laid out left to right from raw sources to reports.',
+    stage: () => `
+      <div class="folder" style="left:20px;top:88px;${at('fade', 0)}">
+        <span style="font-size:22px">📁</span><b style="${at('fade', 30)}">kimball_retail</b>
+        <span style="${at('fade', 32)}">15 tables · 28 deps</span>
+      </div>
+      <div class="file" style="--c:var(--src);left:24px;top:14px;${anim(kf('fly1', '0%,4%{opacity:0;transform:none} 8%{opacity:1} 20%{opacity:1;transform:translate(16px,90px) scale(.6)} 24%,100%{opacity:0;transform:translate(16px,90px) scale(.5)}'))}">src.raw_customers.sql</div>
+      <div class="file" style="--c:var(--dim);left:24px;top:14px;${anim(kf('fly2', '0%,10%{opacity:0;transform:none} 14%{opacity:1} 26%{opacity:1;transform:translate(16px,90px) scale(.6)} 30%,100%{opacity:0;transform:translate(16px,90px) scale(.5)}'))}">dim.customer.sql</div>
+      <svg class="edges">
+        ${edge(curve(258, 54, 290, 54), at('draw', 66))}
+        ${edge(curve(258, 170, 290, 170), at('draw', 67))}
+        ${edge(curve(386, 54, 404, 112), at('draw', 69))}
+        ${edge(curve(386, 170, 404, 112), at('draw', 70))}
+        ${edge(curve(500, 112, 510, 112), at('draw', 72))}
+      </svg>
+      <div class="cap" style="left:186px;top:8px;${at('fade', 40)}">L0</div>
+      ${box('src.customers', 'src', 162, 28, at('pop', 40))}
+      ${box('src.stores', 'src', 162, 144, at('pop', 42))}
+      <div class="cap" style="left:316px;top:8px;${at('fade', 48)}">L1</div>
+      ${box('dim.customer', 'dim', 290, 28, at('pop', 48))}
+      ${box('dim.store', 'dim', 290, 144, at('pop', 50))}
+      <div class="cap" style="left:430px;top:66px;${at('fade', 56)}">L2</div>
+      ${box('fact.sales', 'fact', 404, 86, at('pop', 56))}
+      <div class="cap" style="left:470px;top:226px;${at('fade', 74)}">→ reports</div>`,
+  },
+  {
+    title: 'Click to inspect, open to dive in',
+    text: 'Click any node to see what it <b>reads from</b> and what <b>uses</b> it. Press <b>Open in Query view</b> to see that file\'s own graph. <kbd>Esc</kbd> brings you back to the DAG.',
+    stage: () => `
+      <svg class="edges">
+        ${edge(curve(106, 60, 138, 120), 'stroke-dasharray:none')}
+        ${edge(curve(106, 190, 138, 120), 'stroke-dasharray:none')}
+        ${edge(curve(234, 120, 262, 120), 'stroke-dasharray:none')}
+        <path class="hi" d="${curve(106, 60, 138, 120)}" style="${between(27, 58, 'opacity:0', 'opacity:1')}"/>
+        <path class="hi" d="${curve(106, 190, 138, 120)}" style="${between(27, 58, 'opacity:0', 'opacity:1')}"/>
+        <path class="hi" d="${curve(234, 120, 262, 120)}" style="${between(27, 58, 'opacity:0', 'opacity:1')}"/>
+      </svg>
+      ${box('dim.customer', 'dim', 10, 34)}
+      ${box('dim.store', 'dim', 10, 164)}
+      ${box('fact.returns', 'fact', 138, 94, between(27, 58, 'box-shadow:none', 'box-shadow:0 0 0 4px rgba(63,185,80,.45)'))}
+      ${box('rpt.c360', 'rpt', 262, 94)}
+      <div class="ins" style="${anim(kf('ins-in', '0%,28%{opacity:0;transform:translateX(30px)} 33%,58%{opacity:1;transform:none} 61%,100%{opacity:0;transform:none}'))}">
+        <div class="t">fact.returns</div><div class="s">fact.returns.sql · L2</div>
+        <div class="k">READS FROM · 2</div><div class="chipz"><span>dim.customer</span><span>dim.store</span></div>
+        <div class="k">USED BY · 1</div><div class="chipz"><span>rpt.c360</span></div>
+        <div class="open" style="${press(55)}">Open in Query view ↵</div>
+      </div>
+      <div class="qv" style="${anim(kf('qv-in', '0%,59%{opacity:0} 63%,90%{opacity:1} 95%,100%{opacity:0}'))}">
+        <div class="qv-bar"><span class="back">← kimball_retail</span><span>Reads from</span><b>dim.customer</b><b>dim.store</b></div>
+        <svg class="edges"><path d="M226,140 L330,92"/><path d="M226,140 L330,196"/></svg>
+        ${box('fact.returns', 'fact', 140, 116)}
+        ${box('dim.customer', 'dim', 330, 64)}
+        ${box('dim.store', 'dim', 330, 172)}
+        <div class="toast" style="${anim(kf('toast', '0%,72%{opacity:0} 75%,90%{opacity:1} 95%,100%{opacity:0}'))}"><kbd>Esc</kbd> back to the DAG</div>
+      </div>
+      <div class="cursor" style="left:0;top:0;${cursorPath('i', [[8, 470, 230], [22, 182, 116], [26, 182, 116], [44, 430, 112], [52, 448, 124], [58, 448, 124], [70, 500, 230]])}">${cursorSvg}</div>
+      <div class="ripple" style="left:188px;top:122px;${ripple(26)}"></div>
+      <div class="ripple" style="left:454px;top:130px;${ripple(55)}"></div>`,
+  },
+  {
+    title: 'Get around fast',
+    text: '<kbd>1</kbd> / <kbd>2</kbd> switch between the Project and Query views. <kbd>⌘K</kbd> jumps to any table. <kbd>Esc</kbd> goes back. Press <kbd>?</kbd> to see this guide again.',
+    dark: true,
+    stage: () => `
+      <div class="mhead">
+        <span class="logo" style="font-size:11px">⬡ table-deps</span>
+        <div class="mseg">
+          <div class="ind" style="${anim(kf('seg', '0%,11%{transform:none} 14%,72%{transform:translateX(70px)} 75%,100%{transform:none}'))}"></div>
+          <span>Project</span><span>Query</span>
+        </div>
+      </div>
+      <div class="mbody">
+        <div class="v" style="${anim(kf('vp', '0%,11%{opacity:1} 13%,73%{opacity:0} 76%,100%{opacity:1}'))}"><span style="font-size:22px">◇</span><b>Project view</b><span>the DAG</span></div>
+        <div class="v" style="${anim(kf('vq', '0%,11%{opacity:0} 13%,73%{opacity:1} 76%,100%{opacity:0}'))}"><span style="font-size:22px">▭</span><b>Query view</b><span>one file's graph</span></div>
+      </div>
+      <div class="mpal" style="${between(36, 58, 'opacity:0;transform:translateY(-6px)', 'opacity:1;transform:none')}">
+        <div class="in">cust<span style="opacity:.5">▌</span></div>
+        <div class="r on" style="--c:var(--dim)"><i></i>dim.customer</div>
+        <div class="r" style="--c:var(--rpt)"><i></i>rpt.customer_360</div>
+        <div class="r" style="--c:var(--src)"><i></i>src.raw_customers</div>
+      </div>
+      <div class="keys">
+        <div class="key"><kbd style="${press(11)}">2</kbd>Query</div>
+        <div class="key"><kbd style="${press(35)}">⌘K</kbd>Jump</div>
+        <div class="key"><kbd style="${press(58)}">Esc</kbd>Close</div>
+        <div class="key"><kbd style="${press(72)}">1</kbd>Project</div>
+      </div>`,
+  },
+];
+
+// ── Mock app + tour controller ──────────────────────────────────────────────
+let landing = 'query', step = 0, open = true, pulse = false;
+
+function appHtml() {
+  const isQ = landing === 'query';
+  return `<header>
+      <span class="logo">⬡ table-deps</span>
+      <div class="seg"><span class="${isQ ? '' : 'on'}">◇ Project</span><span class="${isQ ? 'on' : ''}">▭ Query</span></div>
+      <span class="crumb">${isQ ? 'Scratch query' : '<span style="color:var(--muted)">No project loaded</span>'}</span>
+      <div class="spacer"></div>
+      <button class="help-btn ${pulse ? 'pulse' : ''}" id="help" title="How to use table-deps (?)">?</button>
+      <span class="jump">⌕ Jump to table… <kbd>⌘K</kbd></span>
+    </header>
+    <div class="main">
+      <div class="sb">${isQ
+        ? `<div class="slabel">SQL Query</div><div class="ta" id="ta">Paste your SQL here…</div><div class="btnrow"><span class="b pri">▶ Analyze</span><span class="b">Example</span></div>`
+        : `<div class="slabel">Project Directory</div><div class="ta" style="height:90px;display:flex;align-items:center;justify-content:center;border-style:dashed">📂 Open Project Folder</div><div class="btnrow"><span class="b pri">▶ Open</span><span class="b">Example</span></div>`}</div>
+      <div class="canvas"><div class="ic">${isQ ? '⬡' : '📁'}</div><div>${isQ ? 'Paste a SQL query and click Analyze' : 'Open a project folder to begin'}</div></div>
+    </div>
+    <div class="ribbon">Scroll to zoom · Drag nodes<span class="spacer"></span>Crafted by <b>DOthedot</b> · <b>GitHub</b></div>
+    ${open ? tourHtml() : ''}`;
+}
+
+function tourHtml() {
+  const s = SCENES[step], last = step === SCENES.length - 1;
+  return `<div class="backdrop" id="backdrop">
+    <div class="tour" role="dialog" aria-modal="true" aria-label="How to use table-deps">
+      <div class="tour-top"><span class="count">Step ${step + 1} of ${SCENES.length}</span><button class="x" data-act="close" title="Close (Esc)">✕</button></div>
+      <div class="stage ${s.dark ? 'dark' : ''}">${s.stage()}</div>
+      <div class="tour-body"><h2>${s.title}</h2><p>${s.text}</p></div>
+      <div class="tour-foot">
+        <div class="pips">${SCENES.map((_, k) => `<button class="${k === step ? 'on' : ''}" data-step="${k}" aria-label="Step ${k + 1}"></button>`).join('')}</div>
+        ${last
+          ? `<div class="cta-row"><button class="nav" data-act="own">Paste my own SQL</button><button class="nav pri" data-act="example">Explore example project →</button></div>`
+          : `<button class="skip" data-act="close">Skip</button>
+             ${step ? '<button class="nav" data-act="prev">← Back</button>' : ''}
+             <button class="nav pri" data-act="next">${step ? 'Next →' : 'Show me how →'}</button>`}
+      </div>
+    </div></div>`;
+}
+
+function render() {
+  document.getElementById('app').innerHTML = appHtml();
+  document.getElementById('addr').textContent = 'table-deps.vercel.app' + (landing === 'query' ? '/' : '/project');
+}
+
+document.getElementById('app').addEventListener('click', e => {
+  if (e.target.id === 'help') { open = true; step = 0; pulse = false; return render(); }
+  if (e.target.id === 'backdrop') { open = false; return render(); }
+  const st = e.target.closest('[data-step]'); if (st) { step = +st.dataset.step; return render(); }
+  const act = e.target.closest('[data-act]')?.dataset.act;
+  if (act === 'close' || act === 'own') { open = false; render(); if (act === 'own' && landing === 'query') { const ta = document.getElementById('ta'); ta.style.borderColor = 'var(--accent)'; ta.textContent = '▌'; } }
+  if (act === 'example') { landing = 'project'; open = false; render(); document.querySelector('.canvas').innerHTML = '<div class="ic">⬡</div><div><b>kimball_retail</b> example loads here</div>'; }
+  if (act === 'next') { step = Math.min(step + 1, SCENES.length - 1); render(); }
+  if (act === 'prev') { step = Math.max(step - 1, 0); render(); }
+});
+document.addEventListener('keydown', e => {
+  if (!open) { if (e.key === '?') { open = true; step = 0; render(); } return; }
+  if (e.key === 'Escape') { open = false; render(); }
+  if (e.key === 'ArrowRight') { step = Math.min(step + 1, SCENES.length - 1); render(); }
+  if (e.key === 'ArrowLeft') { step = Math.max(step - 1, 0); render(); }
+});
+
+const ctl = id => document.getElementById(id);
+ctl('c-replay').onclick = () => { open = true; step = 0; pulse = false; render(); };
+ctl('c-land-q').onclick = () => { landing = 'query'; ctl('c-land-q').classList.add('on'); ctl('c-land-p').classList.remove('on'); render(); };
+ctl('c-land-p').onclick = () => { landing = 'project'; ctl('c-land-p').classList.add('on'); ctl('c-land-q').classList.remove('on'); render(); };
+ctl('c-motion').onclick = () => {
+  const on = document.body.classList.toggle('reduced');
+  ctl('c-motion').textContent = `Reduced motion: ${on ? 'on' : 'off'}`;
+  ctl('c-motion').classList.toggle('on', on);
+  render();
+};
+render();
+</script>
+</body>
+</html>
