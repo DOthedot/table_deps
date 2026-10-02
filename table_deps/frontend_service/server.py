@@ -33,7 +33,7 @@ class _Handler(BaseHTTPRequestHandler):
         elif path == "/api/scan":
             self._serve_scan()
         elif path.startswith("/static/"):
-            self._serve_static(path[len("/static/"):])
+            self._serve_static(path[len("/static/") :])
         else:
             self._respond(404, "text/plain", b"Not found")
 

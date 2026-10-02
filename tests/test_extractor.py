@@ -1,6 +1,7 @@
 """Tests for table_deps.extractor.extract_tables."""
 
 import pytest
+
 from table_deps.extractor import extract_tables
 
 

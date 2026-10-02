@@ -8,6 +8,7 @@ from table_deps.extractor import extract_tables
 
 logger = logging.getLogger(__name__)
 
+
 def _table_id_from_filename(path: Path) -> str | None:
     """Parse 'schema.table_name.sql' → 'schema.table_name'."""
     stem = path.stem
@@ -36,7 +37,7 @@ def scan_project(directory: str | Path) -> dict:
 
     # ── 1. First pass: build node map + raw refs ──────────────────────────
     nodes: dict[str, dict] = {}
-    file_refs: dict[str, list[str]] = {}   # table_id → all referenced tables
+    file_refs: dict[str, list[str]] = {}  # table_id → all referenced tables
 
     for path in sql_files:
         table_id = _table_id_from_filename(path)
@@ -45,7 +46,7 @@ def scan_project(directory: str | Path) -> dict:
             continue
 
         schema = table_id.split(".")[0]
-        table  = table_id.split(".", 1)[1] if "." in table_id else table_id
+        table = table_id.split(".", 1)[1] if "." in table_id else table_id
 
         try:
             sql = path.read_text(encoding="utf-8")
@@ -54,17 +55,17 @@ def scan_project(directory: str | Path) -> dict:
             sql = ""
 
         nodes[table_id] = {
-            "id":            table_id,
-            "label":         table_id,
-            "schema":        schema,
-            "table":         table,
-            "layer":         schema,
-            "file":          path.name,
-            "degree":        0,
-            "all_refs":      [],
+            "id": table_id,
+            "label": table_id,
+            "schema": schema,
+            "table": table,
+            "layer": schema,
+            "file": path.name,
+            "degree": 0,
+            "all_refs": [],
             "internal_refs": [],
             "external_refs": [],
-            "sql_content":   sql,
+            "sql_content": sql,
         }
 
         try:
@@ -110,7 +111,7 @@ def scan_project(directory: str | Path) -> dict:
                     seen_edges.add(key)
                     edges.append({"source": source_id, "target": target_id})
                     nodes[source_id]["degree"] += 1
-                    nodes[target_id]["degree"]  += 1
+                    nodes[target_id]["degree"] += 1
             else:
                 # External reference
                 if ref_lower not in added_external and ref_lower not in project_ids:
@@ -125,11 +126,11 @@ def scan_project(directory: str | Path) -> dict:
 
     return {
         "project_name": directory.name,
-        "nodes":        list(nodes.values()),
-        "edges":        edges,
+        "nodes": list(nodes.values()),
+        "edges": edges,
         "stats": {
             "total_tables": len(nodes),
-            "total_edges":  len(edges),
+            "total_edges": len(edges),
             "layer_counts": layer_counts,
         },
     }
