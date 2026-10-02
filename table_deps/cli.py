@@ -44,18 +44,21 @@ examples:
         help="SQL query string, or a file path when --file is set.",
     )
     parser.add_argument(
-        "--file", "-f",
+        "--file",
+        "-f",
         action="store_true",
         help="Treat the positional argument as a file path.",
     )
     parser.add_argument(
-        "--output-format", "-o",
+        "--output-format",
+        "-o",
         choices=["plain", "json", "csv"],
         default="plain",
         help="Output format (default: plain).",
     )
     parser.add_argument(
-        "--verbose", "-v",
+        "--verbose",
+        "-v",
         action="store_true",
         help="Enable debug logging.",
     )
@@ -102,6 +105,7 @@ def _print_results(tables: list[str], output_format: str) -> None:
 def _open_ui() -> int:
     """Open the browser-based SQL visualizer."""
     from table_deps.frontend_service import start_server
+
     start_server(open_path="/")
     return 0
 
@@ -109,6 +113,7 @@ def _open_ui() -> int:
 def _open_project_ui(project_path: str) -> int:
     """Scan a project directory and open the project overview UI."""
     from table_deps.frontend_service import start_server
+
     try:
         data = scan_project(project_path)
     except ValueError as exc:

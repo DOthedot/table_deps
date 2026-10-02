@@ -1,9 +1,7 @@
 """Tests for table_deps.cli."""
 
 import json
-from unittest.mock import mock_open, patch
 
-import pytest
 from table_deps.cli import main
 
 
@@ -54,6 +52,7 @@ class TestCLIFile:
 class TestCLIStdin:
     def test_reads_from_stdin(self, capsys, monkeypatch):
         import io
+
         monkeypatch.setattr("sys.stdin", io.StringIO("SELECT * FROM stdin_table"))
         monkeypatch.setattr("sys.stdin.isatty", lambda: False)
         exit_code = main([])
