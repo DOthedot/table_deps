@@ -12,7 +12,7 @@ as interactive graphs. Three surfaces share one parser: a **Python library/CLI**
 ## How to run everything
 ```bash
 make install       # uv sync --extra dev
-make verify        # fmt-check + lint + typecheck + js syntax + public/ drift + tests
+make verify        # fmt-check + lint + typecheck + js syntax + public/ drift + py & js tests
 ```
 Same command CI runs. Other targets: `make fmt`, `make test`, `make cov`, `make ui`,
 `make project-ui`, `make sync-public`. Package manager is **uv**, never pip.

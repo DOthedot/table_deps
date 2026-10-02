@@ -35,37 +35,6 @@
 /* Hide toggle when sidebar is open (sidebar has its own close area) */
 #sidebar:not(.collapsed) ~ #graph-container #sidebar-toggle-area { display: none; }
 
-/* ── Navigation button to SQL Visualizer ── */
-.nav-btn {
-  display: flex; align-items: center; gap: 10px;
-  margin: 12px 12px 0; padding: 10px 14px;
-  background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 12%, var(--surface2)), var(--surface2));
-  border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--border));
-  border-radius: 8px;
-  color: var(--accent); font-size: 13px; font-weight: 600;
-  text-decoration: none;
-  cursor: pointer;
-  transition: background 0.2s, border-color 0.2s, transform 0.1s;
-}
-.nav-btn:hover {
-  background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 20%, var(--surface2)), var(--surface2));
-  border-color: var(--accent);
-}
-.nav-btn:active { transform: scale(0.98); }
-.nav-btn svg { flex-shrink: 0; opacity: 0.8; }
-.nav-btn .nav-arrow {
-  margin-left: auto; font-size: 14px; opacity: 0.5;
-  transition: transform 0.2s, opacity 0.2s;
-}
-.nav-btn:hover .nav-arrow { transform: translateX(3px); opacity: 1; }
-
-/* Header elements specific to project page */
-.header-sub { font-size: 12px; color: var(--muted); }
-#project-badge {
-  display: none; background: var(--surface2); border: 1px solid var(--border);
-  border-radius: 4px; padding: 3px 10px; font-size: 11px; font-family: monospace; color: var(--accent);
-}
-
 /* Drop zone */
 #drop-zone {
   border: 2px dashed var(--border); border-radius: 8px; padding: 16px 10px;
@@ -136,3 +105,30 @@
 .box-node.faded    { opacity: 0.12; pointer-events: none; }
 .box-node.hl .node-bg { filter: brightness(1.18); }
 .box-node.grabbing .node-bg { filter: drop-shadow(0 0 8px currentColor) brightness(1.25); }
+
+/* ── Inspector (selected node) ───────────────────── */
+/* right: 60px leaves the zoom controls column free; max-height keeps
+   the search box (bottom: 180px) uncovered */
+#inspector {
+  position: absolute; top: 12px; right: 60px; z-index: 12;
+  width: 290px; max-height: calc(100% - 236px); min-height: 200px;
+  display: flex; flex-direction: column; overflow: hidden;
+  background: var(--surface); border: 1px solid var(--border);
+  border-top: 3px solid var(--c, var(--accent)); border-radius: 10px;
+  box-shadow: 0 12px 32px rgba(0,0,0,0.55);
+}
+.ins-head { position: relative; padding: 12px 40px 10px 14px; border-bottom: 1px solid var(--border); }
+.ins-name { font: 700 14px 'SF Mono','Fira Code',monospace; color: var(--text); word-break: break-all; }
+.ins-file { font: 11px 'SF Mono','Fira Code',monospace; color: var(--muted); margin-top: 3px; }
+.ins-close {
+  position: absolute; top: 8px; right: 8px; padding: 4px 8px;
+  background: none; color: var(--muted); font-size: 12px;
+}
+.ins-close:hover { color: var(--text); background: var(--surface2); }
+.ins-body { padding: 12px 14px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 14px; }
+.ins-group .section-label { margin-bottom: 6px; }
+.ins-empty { font-size: 11px; color: var(--muted); }
+.ins-foot { padding: 10px 14px 12px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 6px; }
+.ins-open { background: var(--accent); color: #0d1117; padding: 8px; font-size: 12.5px; }
+.ins-hint { font-size: 10.5px; color: var(--muted); text-align: center; }
+.chip-ext .dot { background: #6b7280; }

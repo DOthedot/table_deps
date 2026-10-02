@@ -12,7 +12,8 @@ Start here. Agents: the root `CLAUDE.md` is the summary; this is the map.
 ## Specs
 | Date | Spec | Status |
 |---|---|---|
-| 2026-10-03 | [View navigation rework](specs/2026-10-03-view-navigation.md) · [mockup](specs/mockups/view-navigation.html) | Draft |
+| 2026-10-03 | [View navigation rework](specs/2026-10-03-view-navigation.md) · [mockup](specs/mockups/view-navigation.html) | Accepted (A) |
+| 2026-10-03 | [First-visit welcome guide](specs/2026-10-03-onboarding-guide.md) · [mockup](specs/mockups/onboarding-tour.html) | Accepted |
 
 ## ADRs
 | # | Decision | Status |

@@ -9,6 +9,7 @@
 | **Query view** | The single-query page (`visualizer.html`). Code and older docs call it "SQL Visualizer". |
 | **Project view** | The multi-file DAG page (`project.html`). Code and older docs call it "Project DAG". |
 | **Drill down** | Moving from a node in the Project view to that file's Query view. |
+| **Welcome guide** | First-visit animated overview (`tour.js`). Reopened with **?**. |
 | **Scratch query** | SQL pasted into the Query view that is not tied to a project file. |
 
 ## Graph
