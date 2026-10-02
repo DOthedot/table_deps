@@ -94,6 +94,7 @@ def start_server(
         except OSError:
             if try_port == 0:
                 raise
+    assert httpd is not None  # loop either breaks with a server or re-raises
 
     actual_port = httpd.server_address[1]
     url = f"http://127.0.0.1:{actual_port}{open_path}"

@@ -91,6 +91,7 @@ def scan_project(directory: str | Path) -> dict:
             ref_lower = ref.lower()
 
             # Exact match first, then table-name-only match
+            target_id: str | None
             if ref_lower in project_ids:
                 target_id = ref_lower
             else:
