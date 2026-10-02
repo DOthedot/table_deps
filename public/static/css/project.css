@@ -32,6 +32,8 @@
   box-shadow: 0 2px 8px rgba(0,0,0,0.25);
 }
 #sidebar-toggle:hover { background: var(--surface2); }
+/* Hide toggle when sidebar is open (sidebar has its own close area) */
+#sidebar:not(.collapsed) ~ #graph-container #sidebar-toggle-area { display: none; }
 
 /* ── Navigation button to SQL Visualizer ── */
 .nav-btn {

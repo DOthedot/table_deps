@@ -15,3 +15,9 @@ wheels/
 # Test / coverage
 .coverage
 htmlcov/
+
+# Tooling caches
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+.playwright-mcp/

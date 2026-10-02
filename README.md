@@ -9,7 +9,7 @@
 Extract table dependencies from SQL and explore them as interactive graphs.
 Works on a single query or an entire project of `.sql` files.
 
-[**Live Demo**](https://table-deps.vercel.app) · [SQL Visualizer](#sql-visualizer) · [Project DAG](#project-dag) · [CLI](#cli) · [Python Library](#python-library)
+[**Live Demo**](https://table-deps.vercel.app) · [SQL Visualizer](#sql-visualizer) · [Project DAG](#project-dag) · [CLI](#cli) · [Python Library](#python-library) · [Development](#development)
 
 ---
 
@@ -203,16 +203,19 @@ uv sync --extra dev
 
 ---
 
-## Running Tests
+## Development
 
 ```bash
-uv run pytest
-
-# With coverage
-uv run pytest --cov=table_deps --cov-report=term-missing
+make install   # uv sync --extra dev
+make verify    # fmt-check + lint + typecheck + JS syntax + public/ drift + tests (CI runs the same)
+make cov       # tests with coverage
+make help      # all targets
 ```
 
-44 tests, ~0.05 s.
+44 tests, ~0.05 s. Edit the UI in `table_deps/frontend_service/`, then `make sync-public`.
+
+This repo is set up for agent-driven development: start with [`CLAUDE.md`](CLAUDE.md), then
+the [docs index](docs/README.md) (architecture, glossary, specs, ADRs).
 
 ---
 
