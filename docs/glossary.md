@@ -9,6 +9,8 @@
 | **Query view** | The single-query page (`visualizer.html`). Code and older docs call it "SQL Visualizer". |
 | **Project view** | The multi-file DAG page (`project.html`). Code and older docs call it "Project DAG". |
 | **Drill down** | Moving from a node in the Project view to that file's Query view. |
+| **SQL editor** | Floating editor opened with ⤢ on the Query view's SQL box (`sql_editor.js`). Edits the same text. |
+| **Lint rule** | A check in `sql_tools.js` (`lint()`), with a severity (error/warning/info) and an optional fix. |
 | **Welcome guide** | First-visit animated overview (`tour.js`). Reopened with **?**. |
 | **Scratch query** | SQL pasted into the Query view that is not tied to a project file. |
 

@@ -14,6 +14,9 @@ serves files and `/api/scan` (pre-scanned project data from `table-deps project-
 - `static/js/colors.js` — schema → colour palette shared by both views.
 - `static/js/sql_parser.js` — shared keyword/regex constants.
 - `static/js/nav.js`, `shell.js`, `inspector.js`, `query_context.js` — view navigation (see below).
+- `static/js/sql_tools.js` (pure, tested), `sql_editor.js`, `static/css/sql_editor.css`: floating SQL
+  editor with lint and format (`docs/specs/2026-10-03-sql-editor.md`). Lint rules live in `sql_tools.js`;
+  add a failing case in `tests/js/sql_tools.test.js` first, and re-lint `test_projects/` for false positives.
 - `static/js/tour.js` + `static/css/tour.css` — first-visit welcome guide
   (`docs/specs/2026-10-03-onboarding-guide.md`). Keep scenes in sync with the real UI.
 - `static/css/shared.css` — theme tokens (`:root`), header, sidebar, controls.

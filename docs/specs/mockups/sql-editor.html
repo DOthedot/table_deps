@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SQL Editor Mockup</title>
+<style>
+/* Theme tokens copied from table_deps/frontend_service/static/css/shared.css */
+:root {
+  --bg:#0d1117; --surface:#161b22; --surface2:#21262d; --border:#30363d;
+  --text:#e6edf3; --muted:#8b949e; --accent:#58a6ff; --green:#3fb950;
+  --orange:#d29922; --red:#f85149; --purple:#bc8cff; --canvas:#f4f1ec;
+  --pin:#ffea7f; --doc-bg:#05080c;
+  --mono:'SF Mono','Fira Code',ui-monospace,Menlo,monospace;
+  --kw:#ff7b72; --str:#a5d6ff; --num:#79c0ff; --com:#8b949e; --fn:#d2a8ff;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--doc-bg);color:var(--text);font:14px/1.45 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;padding:20px 16px 40px}
+button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
+kbd{font:10.5px var(--mono);background:var(--surface2);border:1px solid var(--border);border-bottom-width:2px;border-radius:4px;padding:0 4px;color:var(--muted)}
+code{font-family:var(--mono);font-size:.92em}
+[hidden]{display:none!important}
+
+/* ── Document chrome ── */
+.doc-head{max-width:1500px;margin:0 auto 16px;display:flex;flex-wrap:wrap;align-items:flex-end;gap:16px}
+.doc-head h1{font-size:20px;font-weight:650}
+.doc-head p{color:var(--muted);font-size:13px;max-width:680px}
+.ctrls{display:flex;gap:6px;margin-left:auto;flex-wrap:wrap}
+.grp{display:flex;gap:2px;background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:3px}
+.grp button{border-radius:6px;padding:6px 11px;font-size:12.5px;color:var(--muted)}
+.grp button.on{background:var(--surface2);color:var(--text);box-shadow:inset 0 0 0 1px var(--border)}
+.grp .rec{font-size:10px;color:var(--green);margin-left:5px}
+.layout{max-width:1500px;margin:0 auto;display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:16px}
+@media (max-width:1100px){.layout{grid-template-columns:1fr}}
+
+/* ── Fake browser + Query view background ── */
+.browser{border:1px solid var(--border);border-radius:12px;overflow:hidden;background:var(--bg);min-width:0}
+.chrome{display:flex;align-items:center;gap:8px;background:var(--surface);padding:8px 12px;border-bottom:1px solid var(--border)}
+.dots{display:flex;gap:6px}.dots i{width:10px;height:10px;border-radius:50%;background:#30363d}
+.addr{flex:1;background:var(--bg);border:1px solid var(--border);border-radius:16px;padding:4px 14px;font:12px var(--mono);color:var(--muted)}
+.app{height:720px;position:relative;display:flex;flex-direction:column;overflow:hidden}
+.app header{display:flex;align-items:center;gap:12px;padding:9px 16px;background:var(--surface);border-bottom:1px solid var(--border)}
+.logo{font:700 15px var(--mono);color:var(--accent)}
+.seg{display:flex;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:2px}
+.seg span{padding:4px 11px;border-radius:6px;font-size:12.5px;font-weight:600;color:var(--muted)}
+.seg span.on{background:var(--surface2);color:var(--text);box-shadow:inset 0 0 0 1px var(--border)}
+.crumb{font:12.5px var(--mono);color:var(--text)}
+.crumb .m{color:var(--muted)}
+.spacer{flex:1}
+.hbtn{display:flex;align-items:center;gap:8px;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:5px 10px;font-size:12px;color:var(--muted)}
+.ctx{display:flex;align-items:center;gap:8px;padding:6px 16px;font-size:12px;background:color-mix(in srgb,var(--accent) 6%,var(--surface));border-bottom:1px solid var(--border);color:var(--muted)}
+.ctx .chip{font:11px var(--mono);color:var(--text);background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:0 8px}
+.main{flex:1;display:flex;min-height:0}
+.sb{width:280px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);padding:14px 16px;display:flex;flex-direction:column;gap:14px}
+.slabel{display:flex;align-items:center;gap:6px;font-size:10px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+.src-note{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted)}
+.src-note code{color:var(--text)}
+.src-note .lnk{margin-left:auto;color:var(--accent);border:1px solid var(--border);border-radius:5px;padding:1px 7px;font-size:11px}
+.ta-wrap{position:relative}
+.ta{width:100%;height:190px;resize:none;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);font:11px/1.55 var(--mono);padding:8px 30px 8px 8px;outline:none}
+.ta:focus{border-color:var(--accent)}
+.ta[readonly]{border-style:dashed;color:#c9d1d9}
+.expand{position:absolute;top:6px;right:6px;width:24px;height:24px;border-radius:6px;display:flex;align-items:center;justify-content:center;background:var(--surface);border:1px solid var(--border);color:var(--muted);transition:all .15s}
+.expand:hover{color:var(--text);border-color:var(--accent);background:var(--surface2)}
+.ta-wrap:hover .expand,.ta-wrap:focus-within .expand{color:var(--text);border-color:var(--accent)}
+.ta-hint{font-size:10.5px;color:var(--muted);margin-top:5px;display:flex;gap:6px;align-items:center}
+.lint-chip{display:inline-flex;align-items:center;gap:4px;font-size:10.5px;border-radius:9px;padding:0 7px;border:1px solid var(--border);background:var(--bg)}
+.btnrow{display:flex;gap:6px}
+.b{flex:1;text-align:center;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:7px;font-size:12px;font-weight:600}
+.b.pri{background:var(--accent);color:#0d1117;border-color:var(--accent)}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.stat{background:var(--surface2);border:1px solid var(--border);border-radius:6px;text-align:center;padding:7px 0}
+.stat .n{font-size:18px;font-weight:700;color:var(--accent)}
+.stat .l{font-size:10px;color:var(--muted)}
+.canvas{flex:1;position:relative;background-color:var(--canvas);background-image:radial-gradient(#d6d0c4 1px,transparent 1px);background-size:22px 22px;overflow:hidden}
+.canvas svg{position:absolute;inset:0;width:100%;height:100%}
+.canvas .gb{position:absolute;width:150px;border-radius:6px;border:1.5px solid var(--c);background:color-mix(in srgb,var(--c) 13%,#fff);box-shadow:0 2px 8px rgba(0,0,0,.08);transition:left .4s,top .4s}
+.canvas .gb b{display:block;font:700 10.5px var(--mono);color:var(--c);padding:4px 8px;background:color-mix(in srgb,var(--c) 26%,#fff)}
+.canvas .gb i{display:block;height:4px;margin:7px 10px;border-radius:2px;background:var(--c);opacity:.3}
+.canvas .frozen{position:absolute;left:12px;bottom:10px;font-size:10.5px;color:#57606a;background:#fff;border:1px solid #d0d7de;border-radius:5px;padding:2px 8px}
+.canvas .flash{position:absolute;left:14px;top:12px;font-size:11px;background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:14px;padding:3px 10px;opacity:0;transition:opacity .3s}
+.canvas .flash.on{opacity:1}
+.ribbon{display:flex;gap:8px;padding:5px 16px;font-size:11px;color:var(--muted);background:var(--surface);border-top:1px solid var(--border)}
+
+/* ── Floating editor ── */
+.ed{position:absolute;z-index:40;display:flex;flex-direction:column;background:var(--bg);border:1px solid var(--border);border-radius:12px;box-shadow:0 24px 60px rgba(0,0,0,.55),0 0 0 1px rgba(255,255,255,.02);overflow:hidden;resize:both;min-width:460px;min-height:300px;animation:edin .22s cubic-bezier(.2,.8,.2,1)}
+@keyframes edin{from{opacity:0;transform:translateY(10px) scale(.98)}to{opacity:1;transform:none}}
+.ed.focus{inset:12px!important;width:auto!important;height:auto!important;resize:none}
+.focus-bg{position:absolute;inset:0;z-index:39;background:rgba(1,4,9,.55);backdrop-filter:blur(2px)}
+.ed-bar{display:flex;align-items:center;gap:6px;padding:7px 8px 7px 12px;background:var(--surface);border-bottom:1px solid var(--border);cursor:grab;user-select:none}
+.ed.focus .ed-bar{cursor:default}
+.ed-bar:active{cursor:grabbing}
+.ed-title{display:flex;align-items:center;gap:8px;font:12.5px var(--mono);color:var(--text);min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ed-title .ro{font:600 10px sans-serif;color:var(--orange);border:1px solid color-mix(in srgb,var(--orange) 50%,transparent);border-radius:9px;padding:0 6px}
+.ed-title .dirty{width:7px;height:7px;border-radius:50%;background:var(--accent)}
+.tb{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 10px;border-radius:7px;font-size:12px;font-weight:600;color:var(--muted);border:1px solid transparent}
+.tb:hover:not(:disabled){color:var(--text);background:var(--surface2);border-color:var(--border)}
+.tb:disabled{opacity:.4;cursor:not-allowed}
+.tb.on{color:var(--text);background:var(--surface2);border-color:var(--border)}
+.tb .cnt{font-size:10px;border-radius:8px;padding:0 5px;color:#0d1117;font-weight:700}
+.tb.icon{width:28px;padding:0;justify-content:center;font-size:13px}
+.sep{width:1px;height:18px;background:var(--border);margin:0 2px}
+.ro-banner{display:flex;align-items:center;gap:8px;padding:6px 12px;font-size:11.5px;color:#e3b341;background:color-mix(in srgb,var(--orange) 10%,var(--bg));border-bottom:1px solid var(--border)}
+.ro-banner button{margin-left:auto;color:var(--accent);font-size:11.5px;font-weight:600;border:1px solid var(--border);border-radius:6px;padding:2px 8px}
+.ed-body{flex:1;display:flex;min-height:0;position:relative}
+.gutter{width:46px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);overflow:hidden;font:12.5px/20px var(--mono);color:#484f58;text-align:right;padding:10px 0}
+.gutter div{position:relative;padding-right:10px;height:20px}
+.gutter div.cur{color:var(--text)}
+.gutter div .mk{position:absolute;left:6px;top:6px;width:8px;height:8px;border-radius:50%}
+.code{flex:1;position:relative;min-width:0}
+.code pre,.code textarea{position:absolute;inset:0;margin:0;padding:10px 14px;font:12.5px/20px var(--mono);white-space:pre;overflow:auto;tab-size:2;border:0}
+.code pre{pointer-events:none;color:var(--text)}
+.code textarea{background:transparent;color:transparent;caret-color:var(--text);resize:none;outline:none}
+.code textarea::selection{background:rgba(56,139,253,.35);color:transparent}
+.code .curline{position:absolute;left:0;right:0;height:20px;background:rgba(110,118,129,.08);pointer-events:none}
+.t-kw{color:var(--kw)}.t-str{color:var(--str)}.t-num{color:var(--num)}.t-com{color:var(--com);font-style:italic}.t-fn{color:var(--fn)}
+.t-tbl{color:var(--c);font-weight:600;text-decoration:underline;text-decoration-color:color-mix(in srgb,var(--c) 45%,transparent);text-underline-offset:3px}
+.sq{text-decoration:underline wavy;text-decoration-skip-ink:none;text-underline-offset:4px}
+.sq.err{text-decoration-color:var(--red)}.sq.warn{text-decoration-color:var(--orange)}.sq.info{text-decoration-color:var(--accent)}
+.probs{flex-shrink:0;max-height:160px;overflow:auto;border-top:1px solid var(--border);background:var(--surface)}
+.probs-h{display:flex;align-items:center;gap:8px;padding:6px 12px;font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);position:sticky;top:0;background:var(--surface)}
+.prob{display:flex;align-items:center;gap:9px;padding:5px 12px;font-size:12px;cursor:pointer}
+.prob:hover{background:var(--surface2)}
+.prob .ic{width:16px;text-align:center;font-weight:700}
+.prob .ln{font:11px var(--mono);color:var(--muted);width:44px}
+.prob .rule{margin-left:auto;font:10.5px var(--mono);color:#484f58}
+.prob .fix{font-size:11px;color:var(--accent);border:1px solid var(--border);border-radius:5px;padding:0 6px}
+.clean{padding:10px 12px;font-size:12px;color:var(--green)}
+.ed-status{display:flex;align-items:center;gap:12px;padding:6px 8px 6px 12px;font-size:11px;color:var(--muted);background:var(--surface);border-top:1px solid var(--border);flex-wrap:wrap}
+.ed-status .live{display:inline-flex;align-items:center;gap:6px;cursor:pointer}
+.sw{width:26px;height:14px;border-radius:8px;background:var(--border);position:relative;transition:background .15s}
+.sw::after{content:'';position:absolute;top:2px;left:2px;width:10px;height:10px;border-radius:50%;background:#fff;transition:left .15s}
+.sw.on{background:var(--green)}.sw.on::after{left:14px}
+.run{margin-left:auto;display:inline-flex;align-items:center;gap:8px;background:var(--accent);color:#0d1117;border-radius:7px;padding:5px 12px;font-size:12px;font-weight:700}
+.run kbd{background:rgba(13,17,23,.15);border-color:rgba(13,17,23,.25);color:#0d1117}
+.toast{position:absolute;left:50%;top:52px;transform:translateX(-50%);background:var(--surface2);border:1px solid var(--border);border-radius:16px;padding:4px 12px;font-size:11.5px;z-index:5;opacity:0;transition:opacity .25s;pointer-events:none}
+.toast.on{opacity:1}
+
+/* ── Callouts + notes ── */
+.pin{display:inline-flex;align-items:center;justify-content:center;width:17px;height:17px;border-radius:50%;background:var(--pin);color:#1b1500;font:700 10px/1 -apple-system,sans-serif;flex-shrink:0;box-shadow:0 0 0 3px #ffea7f33}
+.pin.abs{position:absolute;z-index:30}
+.notes{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 18px;align-self:start;position:sticky;top:16px;max-height:calc(100vh - 32px);overflow:auto}
+.notes h2{font-size:15px;margin-bottom:4px}
+.notes .verdict{font-size:12px;color:var(--muted);margin-bottom:12px}
+.notes h3{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:16px 0 8px}
+.notes ol.c{list-style:none;display:flex;flex-direction:column;gap:9px;font-size:12.8px}
+.notes ol.c li{display:grid;grid-template-columns:17px 1fr;gap:9px}
+.notes ol.c li .pin{margin-top:1px}
+.notes ul{list-style:none;display:flex;flex-direction:column;gap:6px;font-size:12.5px}
+.notes ul li{position:relative;padding-left:14px}
+.notes ul li::before{content:'›';color:var(--accent);position:absolute;left:0}
+.notes table{width:100%;border-collapse:collapse;font-size:12px}
+.notes td{padding:3px 4px;border-bottom:1px solid var(--border);vertical-align:top}
+.notes td:first-child{white-space:nowrap}
+.q{font-size:12.5px;color:#ffd8a8}
+.try{font-size:12.5px;color:var(--muted);display:flex;flex-direction:column;gap:4px}
+.try b{color:var(--text);font-weight:500}
+</style>
+</head>
+<body>
+
+<div class="doc-head">
+  <div>
+    <h1>table-deps · SQL editor mockup</h1>
+    <p>A <b>⤢ expand</b> button on the Query view's SQL box opens a floating editor with line numbers,
+       highlighting, <b>Format</b> and <b>Lint</b>. It edits the same text as the sidebar box.
+       This mock is a working prototype: type, format, fix problems, and press Analyze to update the stand-in graph.</p>
+  </div>
+  <div class="ctrls">
+    <div class="grp" id="g-mode">
+      <button data-v="float" class="on">Floating window<span class="rec">recommended</span></button>
+      <button data-v="focus">Focus mode</button>
+    </div>
+    <div class="grp" id="g-src">
+      <button data-v="scratch" class="on">Scratch query</button>
+      <button data-v="file">From project file</button>
+    </div>
+  </div>
+</div>
+
+<div class="layout">
+  <div class="browser">
+    <div class="chrome"><div class="dots"><i></i><i></i><i></i></div><div class="addr" id="addr"></div></div>
+    <div class="app" id="app">
+      <header>
+        <span class="logo">⬡ table-deps</span>
+        <div class="seg"><span>◇ Project <kbd>1</kbd></span><span class="on">▭ Query <kbd>2</kbd></span></div>
+        <span class="crumb" id="crumb"></span>
+        <div class="spacer"></div>
+        <span class="hbtn" style="padding:5px 9px">?</span>
+        <span class="hbtn">⌕ Jump to table… <kbd>⌘K</kbd></span>
+      </header>
+      <div class="ctx" id="ctx" hidden>
+        <span class="chip">← kimball_retail</span><span>Reads from</span>
+        <span class="chip">dim.customer</span><span class="chip">dim.store</span><span class="chip">src.raw_transactions</span>
+      </div>
+      <div class="main">
+        <aside class="sb">
+          <div>
+            <div class="slabel" style="margin-bottom:8px">SQL Query</div>
+            <div class="src-note" id="src-note" hidden style="margin-bottom:6px">From <code>fact.returns.sql</code><span class="lnk">Edit as scratch</span></div>
+            <div class="ta-wrap">
+              <textarea class="ta" id="side-ta" spellcheck="false"></textarea>
+              <button class="expand" id="expand" title="Open in editor (⌘⇧E)" aria-label="Open SQL in editor">
+                <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2h4v4M6 14H2v-4M14 2 9.5 6.5M2 14l4.5-4.5"/></svg>
+              </button>
+              <span class="pin abs" style="top:-8px;right:-8px">1</span>
+            </div>
+            <div class="ta-hint" id="side-hint"></div>
+          </div>
+          <div class="btnrow"><span class="b pri">▶ Analyze</span><span class="b">Example</span><span class="b" style="flex:0 0 34px">✕</span></div>
+          <div>
+            <div class="slabel" style="margin-bottom:8px">Summary</div>
+            <div class="stats"><div class="stat"><div class="n" id="st-t">0</div><div class="l">Tables</div></div><div class="stat"><div class="n" id="st-c">0</div><div class="l">CTEs</div></div><div class="stat"><div class="n" id="st-j">0</div><div class="l">Joins</div></div></div>
+          </div>
+        </aside>
+        <div class="canvas" id="canvas"><svg id="edges"></svg><span class="flash" id="flash">Graph updated</span><span class="frozen">graph rendering unchanged — simplified stand-in</span></div>
+      </div>
+      <div class="ribbon">Scroll to zoom · Drag nodes<span class="spacer"></span>Crafted by <b style="color:var(--text)">DOthedot</b> · <b style="color:var(--text)">GitHub</b></div>
+    </div>
+  </div>
+
+  <aside class="notes">
+    <h2>SQL editor</h2>
+    <div class="verdict">One button opens it; it edits the same SQL as the sidebar box. Nothing is saved anywhere else.</div>
+    <ol class="c">
+      <li><span class="pin">1</span><span><b>⤢ Expand</b> sits in the SQL box corner. It's always visible and lights up on hover or focus. Shortcut <kbd>⌘⇧E</kbd> / <kbd>Ctrl⇧E</kbd>.</span></li>
+      <li><span class="pin">2</span><span><b>Floating window</b>: drag it by the title bar and resize it from the corner, so the graph stays visible behind it. <b>Focus mode</b> (⤢ in the title bar) fills the screen for long queries.</span></li>
+      <li><span class="pin">3</span><span><b>Highlighting</b> covers keywords, strings, numbers and comments. Referenced <b>tables are coloured by schema</b>, the same colours as the graph.</span></li>
+      <li><span class="pin">4</span><span><b>Format</b> <kbd>⇧⌥F</kbd> uppercases keywords and puts each clause and select column on its own line. One <kbd>⌘Z</kbd> undoes it.</span></li>
+      <li><span class="pin">5</span><span><b>Lint</b> shows wavy underlines, gutter dots and a Problems list. Click a problem to jump to its line; some have a one-click <b>Fix</b>.</span></li>
+      <li><span class="pin">6</span><span><b>Analyze</b> <kbd>⌘↵</kbd> updates the graph behind the editor. The <b>Live</b> switch re-analyzes as you type (debounced).</span></li>
+    </ol>
+    <h3>Lint rules (v1)</h3>
+    <table>
+      <tr><td>🔴 unbalanced-parens</td><td>A <code>(</code> without a matching <code>)</code></td></tr>
+      <tr><td>🔴 trailing-comma</td><td><code>,</code> right before <code>FROM</code></td></tr>
+      <tr><td>🔴 join-without-on</td><td>JOIN without ON/USING (except CROSS)</td></tr>
+      <tr><td>🟠 select-star</td><td><code>SELECT *</code> hides column lineage</td></tr>
+      <tr><td>🟠 implicit-join</td><td><code>FROM a, b</code>: use an explicit JOIN</td></tr>
+      <tr><td>🔵 keyword-case</td><td>Mixed keyword case; <b>Fix</b> runs Format</td></tr>
+    </table>
+    <h3>From a project file</h3>
+    <ul>
+      <li>Opens <b>read-only</b> with a banner. Lint still runs; Format is disabled until you click <b>Edit as scratch</b>.</li>
+    </ul>
+    <h3>Try it</h3>
+    <div class="try">
+      <span>→ Click <b>⤢</b> on the SQL box</span>
+      <span>→ Click a problem, or its <b>Fix</b></span>
+      <span>→ Press <b>Format</b>, then <kbd>⌘Z</kbd></span>
+      <span>→ Type <code>JOIN dim.store s</code> and watch the lint</span>
+      <span>→ Drag the title bar; resize the corner</span>
+      <span>→ <b>Analyze</b>, and the graph behind updates</span>
+    </div>
+    <h3>Open questions</h3>
+    <div class="q">1. Formatter: a home-grown one with no dependencies (like this mock), or the proven <code>sql-formatter</code> library, loaded from a CDN only when Format is first clicked? Recommended: the library, because formatting quality is visible to every user.</div>
+    <div class="q" style="margin-top:8px">2. Should the Project view inspector also get a "View SQL" button that opens this editor read-only?</div>
+  </aside>
+</div>
+
+<script>
+// ═════════════ SQL helpers (mock-grade; real ones would live in sql_editor.js) ═════════════
+const KW = new Set(('select from where join inner left right full outer cross on and or not in is null as with by group order having limit offset union all distinct case when then else end between like exists using over partition asc desc create table view replace insert into values update set delete recursive lateral true false').split(' '));
+const FN = new Set('count sum avg min max coalesce cast date_trunc row_number rank lag lead nullif round lower upper extract'.split(' '));
+const SCHEMA_C = { raw:'#f85149', src:'#f85149', dim:'#58a6ff', fact:'#3fb950', rpt:'#d29922', stg:'#bc8cff', mart:'#39d0d8' };
+const tcolor = id => SCHEMA_C[id.split('.')[0]] || '#8b949e';
+const esc = s => s.replace(/[&<>]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[c]));
+const TOK = /(--[^\n]*)|('(?:[^']|'')*'?)|(\b\d+(?:\.\d+)?\b)|([A-Za-z_][\w$]*(?:\.[A-Za-z_][\w$]*)*)|(\s+)|([\s\S])/g;
+
+function tokens(sql) {
+  const out = []; let m; TOK.lastIndex = 0;
+  while ((m = TOK.exec(sql))) {
+    const [t] = m, i = m.index;
+    out.push({ t, i, k: m[1] ? 'com' : m[2] ? 'str' : m[3] ? 'num' : m[4] ? 'word' : m[5] ? 'ws' : 'p' });
+  }
+  return out;
+}
+
+// tables = identifiers right after FROM / JOIN (and after commas in a FROM list), minus CTE names
+function analyze(sql) {
+  const toks = tokens(sql).filter(x => x.k !== 'ws' && x.k !== 'com');
+  const ctes = new Set(), tables = [], seen = new Set(); let joins = 0, prev = '', inFrom = false;
+  toks.forEach((x, k) => {
+    const lw = x.t.toLowerCase();
+    if (x.k === 'word' && toks[k + 1]?.t.toLowerCase() === 'as' && toks[k + 2]?.t === '(') ctes.add(lw);
+    if (x.k === 'word' && (prev === 'from' || prev === 'join' || (inFrom && prev === ',')) && !KW.has(lw)) {
+      if (!ctes.has(lw) && !seen.has(lw)) { seen.add(lw); tables.push(lw); }
+    }
+    if (lw === 'join') joins++;
+    if (lw === 'from') inFrom = true;
+    else if (x.k === 'word' && KW.has(lw) && lw !== 'as') inFrom = lw === 'from';
+    prev = x.k === 'word' ? lw : x.t;
+  });
+  return { tables, ctes: [...ctes], joins };
+}
+
+function highlight(sql, problems) {
+  const tbls = new Set(analyze(sql).tables);
+  const marks = problems.filter(p => p.from != null);
+  let html = '';
+  for (const x of tokens(sql)) {
+    let s = esc(x.t), cls = '';
+    if (x.k === 'com') cls = 't-com';
+    else if (x.k === 'str') cls = 't-str';
+    else if (x.k === 'num') cls = 't-num';
+    else if (x.k === 'word') {
+      const lw = x.t.toLowerCase();
+      if (KW.has(lw)) cls = 't-kw';
+      else if (FN.has(lw)) cls = 't-fn';
+      else if (tbls.has(lw)) { s = `<span class="t-tbl" style="--c:${tcolor(lw)}">${s}</span>`; }
+    }
+    if (cls) s = `<span class="${cls}">${s}</span>`;
+    const hit = marks.find(p => x.i >= p.from && x.i < p.to && x.k !== 'ws');
+    if (hit) s = `<span class="sq ${hit.sev}">${s}</span>`;
+    html += s;
+  }
+  return html + '\n';
+}
+
+// ── formatter: clause per line, select columns indented, keywords upper ──
+const CLAUSE = new Set(['select', 'from', 'where', 'having', 'limit', 'union', 'with', 'join', 'group', 'order']);
+function formatSQL(sql) {
+  const toks = tokens(sql).filter(x => x.k !== 'ws');
+  const lines = []; let line = '', depth = 0, clause = '';
+  const stack = [];
+  const ind = (d, extra = 0) => '    '.repeat(d) + ' '.repeat(extra);
+  const brk = (extra = 0) => { if (line.trim()) lines.push(line.replace(/\s+$/, '')); line = ind(depth, extra); };
+  const push = s => {
+    const glue = !line.trim() || /[(.]$/.test(line) || /^[,).]/.test(s) ? '' : ' ';
+    line += glue + s;
+  };
+  toks.forEach((x, k) => {
+    const lw = x.t.toLowerCase(), next = toks[k + 1]?.t.toLowerCase();
+    const word = x.k === 'word' && KW.has(lw) ? x.t.toUpperCase() : x.t;
+    if (x.k === 'com') { brk(); push(x.t); brk(); return; }
+    const joinStart = ['left', 'right', 'inner', 'full', 'cross'].includes(lw) && (next === 'join' || next === 'outer');
+    const startsClause = x.k === 'word' && (CLAUSE.has(lw) || joinStart) &&
+      !(lw === 'join' && ['left', 'right', 'inner', 'full', 'cross', 'outer'].includes(toks[k - 1]?.t.toLowerCase()));
+    if (startsClause) { brk(); clause = lw; push(word); if (lw === 'select') brk(4); return; }
+    if (x.k === 'word' && (lw === 'on' || ((lw === 'and' || lw === 'or') && ['where', 'join', 'having'].includes(clause) || (lw === 'and' || lw === 'or') && joinStart))) {
+      brk(4); push(word); return;
+    }
+    if (x.t === '(') {
+      const prev = toks[k - 1], call = prev && prev.k === 'word' && !KW.has(prev.t.toLowerCase());
+      if (call) line += '('; else push('('); // sum(x), not sum (x)
+      stack.push(next === 'select'); depth++; if (next === 'select') brk(); return;
+    }
+    if (x.t === ')') { depth = Math.max(0, depth - 1); if (stack.pop()) brk(); push(')'); return; }
+    if (x.t === ',') { push(','); if (clause === 'select' || clause === 'group' || clause === 'order') brk(4); else if (clause === 'with' || toks[k - 1]?.t === ')') brk(); return; }
+    push(word);
+  });
+  brk();
+  return lines.join('\n').replace(/\n{3,}/g, '\n\n');
+}
+
+// ── linter ──
+function lineOf(sql, i) { return sql.slice(0, i).split('\n').length; }
+function lint(sql) {
+  const P = [], code = sql.replace(/--[^\n]*/g, m => ' '.repeat(m.length)).replace(/'(?:[^']|'')*'/g, m => "'" + ' '.repeat(Math.max(0, m.length - 2)) + "'");
+  const add = (sev, rule, i, len, msg, fix) => P.push({ sev, rule, line: lineOf(sql, i), from: i, to: i + len, msg, fix });
+  let m;
+  // unbalanced parens
+  const open = [];
+  [...code].forEach((c, i) => { if (c === '(') open.push(i); else if (c === ')') { if (open.length) open.pop(); else add('err', 'unbalanced-parens', i, 1, 'Unexpected ")": no matching "("'); } });
+  open.forEach(i => add('err', 'unbalanced-parens', i, 1, '"(" is never closed'));
+  // trailing comma before FROM
+  const tc = /,(\s*)\bfrom\b/gi;
+  while ((m = tc.exec(code))) add('err', 'trailing-comma', m.index, 1, 'Trailing comma before FROM', 'trailing-comma');
+  // JOIN without ON / USING
+  const jre = /\b((?:left|right|inner|full|cross)\s+(?:outer\s+)?)?join\b/gi;
+  const joins = []; while ((m = jre.exec(code))) joins.push(m);
+  joins.forEach((j, k) => {
+    if (/^cross/i.test(j[1] || '')) return;
+    const end = k + 1 < joins.length ? joins[k + 1].index : code.length;
+    const seg = code.slice(j.index, end).split(/\b(where|group\s+by|order\s+by|having|limit|union)\b/i)[0];
+    if (!/\b(on|using)\b/i.test(seg)) add('err', 'join-without-on', j.index, j[0].length, 'JOIN has no ON / USING condition');
+  });
+  // SELECT *
+  const ss = /\bselect\s+(?:distinct\s+)?(\*)|,\s*(\*)\s/gi;
+  while ((m = ss.exec(code))) { const off = m[0].lastIndexOf('*'); add('warn', 'select-star', m.index + off, 1, 'Avoid SELECT *: list columns so lineage stays explicit'); }
+  // implicit comma join
+  const ij = /\bfrom\s+[\w.]+(?:\s+(?:as\s+)?(?!where|join|left|right|inner|full|cross|group|order|on)\w+)?\s*,\s*[\w.]+/gi;
+  while ((m = ij.exec(code))) add('warn', 'implicit-join', m.index, 4, 'Implicit join (FROM a, b): use an explicit JOIN … ON');
+  // mixed keyword case
+  const kws = (code.match(/\b(select|from|where|join|on|and|group|order|by|as|left|inner)\b/gi) || []);
+  const up = kws.filter(w => w === w.toUpperCase()).length, lo = kws.filter(w => w === w.toLowerCase()).length;
+  if (up && lo) { const i = code.search(/\b(select|from|where|join|on|and|as)\b/); add('info', 'keyword-case', Math.max(i, 0), 0, `Keywords in mixed case (${up} upper, ${lo} lower)`, 'format'); }
+  const rank = { err: 0, warn: 1, info: 2 };
+  return P.sort((a, b) => rank[a.sev] - rank[b.sev] || a.line - b.line);
+}
+
+// ═════════════ Mock state ═════════════
+const SCRATCH_SQL = `-- Monthly revenue by customer segment
+with seg as (
+  select customer_id, segment from dim.customer
+)
+SELECT s.segment, sum(f.net_amount) as revenue,
+  count(*) as orders,
+FROM fact.sales f
+join seg s on s.customer_id = f.customer_id
+LEFT JOIN dim.date d
+WHERE d.fiscal_year = 2024 and f.status = 'complete'
+group by s.segment
+order by revenue desc`;
+const FILE_SQL = `-- Kimball returns fact table
+CREATE OR REPLACE TABLE fact.returns AS
+SELECT
+    dc.customer_key,
+    ds.store_key,
+    t.quantity AS returned_qty,
+    t.unit_price * t.quantity AS returned_value
+FROM src.raw_transactions t
+JOIN dim.customer dc ON dc.customer_id = t.customer_id
+LEFT JOIN dim.store ds ON ds.store_id = t.store_id
+WHERE t.return_flag = TRUE`;
+
+const st = { mode: 'float', src: 'scratch', open: false, sql: SCRATCH_SQL, live: false, showProbs: true,
+             pos: { left: 300, top: 70, w: 640, h: 520 }, history: [], lastAnalyzed: '' };
+const $ = id => document.getElementById(id);
+
+function readOnly() { return st.src === 'file'; }
+
+// ── background: sidebar + stand-in graph ──
+function renderBackground() {
+  const ro = readOnly();
+  $('addr').textContent = 'table-deps.vercel.app/' + (ro ? '?p=kimball_retail&t=fact.returns' : '');
+  $('crumb').innerHTML = ro ? '<span class="m">kimball_retail ›</span> fact.returns.sql' : 'Scratch query';
+  $('ctx').hidden = !ro; $('src-note').hidden = !ro;
+  const ta = $('side-ta'); ta.readOnly = ro;
+  if (ta.value !== st.sql) ta.value = st.sql;
+  const P = lint(st.sql), e = P.filter(p => p.sev === 'err').length, w = P.filter(p => p.sev === 'warn').length;
+  $('side-hint').innerHTML = (e || w)
+    ? `<span class="lint-chip" style="color:${e ? 'var(--red)' : 'var(--orange)'}">${e ? `● ${e} error${e > 1 ? 's' : ''}` : ''}${e && w ? ' · ' : ''}${w ? `▲ ${w} warning${w > 1 ? 's' : ''}` : ''}</span><span>open ⤢ to see details</span>`
+    : '<span class="lint-chip" style="color:var(--green)">✓ no problems</span>';
+}
+
+function renderGraph(sql, flash) {
+  const { tables, ctes, joins } = analyze(sql);
+  $('st-t').textContent = tables.length; $('st-c').textContent = ctes.length; $('st-j').textContent = joins;
+  const cv = $('canvas'); cv.querySelectorAll('.gb').forEach(n => n.remove());
+  const H = cv.clientHeight || 560, pos = {};
+  const gap = Math.min(110, (H - 80) / Math.max(tables.length, 1)), y0 = (H - gap * tables.length) / 2;
+  tables.forEach((t, k) => {
+    pos[t] = [k === 0 ? 24 : 70, y0 + k * gap];
+    const d = document.createElement('div'); d.className = 'gb'; d.style.cssText = `--c:${tcolor(t)};left:${pos[t][0]}px;top:${pos[t][1]}px`;
+    d.innerHTML = `<b>${t}</b><i style="width:70%"></i><i style="width:50%"></i>`; cv.appendChild(d);
+  });
+  $('edges').innerHTML = tables.slice(1).map(t => {
+    const [x1, y1] = [pos[tables[0]][0] + 150, pos[tables[0]][1] + 22], [x2, y2] = [pos[t][0] + 150, pos[t][1] + 22];
+    return `<path d="M${x1},${y1} C${x1 + 50},${y1} ${x2 + 50},${y2} ${x2},${y2}" fill="none" stroke="#94a3b8" stroke-width="1.4"/>`;
+  }).join('');
+  st.lastAnalyzed = sql;
+  if (flash) { $('flash').classList.add('on'); setTimeout(() => $('flash').classList.remove('on'), 1200); }
+}
+
+// ── editor ──
+function editorHtml() {
+  const ro = readOnly(), focus = st.mode === 'focus';
+  const p = st.pos;
+  return `${focus ? '<div class="focus-bg" data-act="close-bg"></div>' : ''}
+  <div class="ed ${focus ? 'focus' : ''}" id="ed" role="dialog" aria-label="SQL editor" style="left:${p.left}px;top:${p.top}px;width:${p.w}px;height:${p.h}px">
+    <div class="ed-bar" id="ed-bar">
+      <div class="ed-title"><span style="color:var(--muted)">▭</span>${ro ? 'fact.returns.sql <span class="ro">READ-ONLY</span>' : 'Scratch query'}<span class="dirty" id="dirty" hidden title="Not analyzed yet"></span></div>
+      <span class="pin" style="margin-left:2px">2</span>
+      <div class="spacer"></div>
+      <button class="tb" data-act="format" id="b-format" ${ro ? 'disabled title="Read-only: click Edit as scratch to format"' : 'title="Format SQL (⇧⌥F)"'}>✦ Format</button><span class="pin">4</span>
+      <button class="tb ${st.showProbs ? 'on' : ''}" data-act="lint" id="b-lint" title="Toggle problems (⌘⇧M)">Lint <span class="cnt" id="lint-cnt"></span></button><span class="pin">5</span>
+      <button class="tb icon" data-act="copy" title="Copy SQL">⧉</button>
+      <span class="sep"></span>
+      <button class="tb icon" data-act="mode" title="${focus ? 'Back to floating window' : 'Focus mode (fill screen)'}">${focus ? '⤡' : '⤢'}</button>
+      <button class="tb icon" data-act="close" title="Close (Esc). Your edits stay in the SQL box">✕</button>
+    </div>
+    ${ro ? '<div class="ro-banner">🔒 Read-only: this is <b>fact.returns.sql</b> from kimball_retail. Lint still runs.<button data-act="scratch">Edit as scratch</button></div>' : ''}
+    <div class="ed-body">
+      <div class="gutter" id="gutter"></div>
+      <div class="code"><div class="curline" id="curline"></div><pre id="hl" aria-hidden="true"></pre><textarea id="src" spellcheck="false" autocomplete="off" wrap="off" ${ro ? 'readonly' : ''}></textarea>
+        <span class="pin abs" style="right:14px;top:10px">3</span></div>
+    </div>
+    <div class="probs" id="probs" ${st.showProbs ? '' : 'hidden'}></div>
+    <div class="ed-status">
+      <span id="cur">Ln 1, Col 1</span><span id="tcount"></span>
+      <span class="live" data-act="live" title="Re-analyze as you type"><span class="sw ${st.live ? 'on' : ''}"></span>Live</span>
+      <span>Esc close</span>
+      <button class="run" data-act="run">▶ Analyze <kbd>⌘↵</kbd></button><span class="pin">6</span>
+    </div>
+    <div class="toast" id="toast"></div>
+  </div>`;
+}
+
+function openEditor() {
+  if (st.open) return;
+  st.open = true;
+  const host = document.createElement('div'); host.id = 'ed-host';
+  $('app').appendChild(host);
+  if (st.mode === 'float') {
+    const app = $('app').getBoundingClientRect();
+    const w = Math.min(580, app.width - 32);
+    st.pos = { left: app.width - w - 16, top: 60, w, h: Math.min(560, app.height - 90) };
+  }
+  mountEditor();
+}
+function mountEditor() {
+  const host = $('ed-host'); host.innerHTML = editorHtml();
+  const src = $('src'); src.value = st.sql;
+  refresh(); src.focus(); src.setSelectionRange(0, 0);
+  bindEditor();
+}
+function closeEditor() { st.open = false; $('ed-host')?.remove(); renderBackground(); $('side-ta').focus(); }
+
+function refresh() {
+  const src = $('src'); if (!src) return;
+  st.sql = src.value;
+  const P = lint(st.sql);
+  $('hl').innerHTML = highlight(st.sql, P);
+  const n = st.sql.split('\n').length, byLine = {};
+  P.forEach(p => { (byLine[p.line] ??= p); });
+  const curLine = st.sql.slice(0, src.selectionStart).split('\n').length;
+  $('gutter').innerHTML = Array.from({ length: n }, (_, k) => {
+    const p = byLine[k + 1], c = p && ({ err: 'var(--red)', warn: 'var(--orange)', info: 'var(--accent)' })[p.sev];
+    return `<div class="${k + 1 === curLine ? 'cur' : ''}">${p ? `<span class="mk" style="background:${c}" title="${esc(p.msg)}"></span>` : ''}${k + 1}</div>`;
+  }).join('');
+  const e = P.filter(p => p.sev === 'err').length, w = P.filter(p => p.sev === 'warn').length;
+  const cnt = $('lint-cnt'); cnt.textContent = P.length || '✓';
+  cnt.style.background = e ? 'var(--red)' : w ? 'var(--orange)' : P.length ? 'var(--accent)' : 'var(--green)';
+  $('probs').innerHTML = `<div class="probs-h">Problems · ${P.length}<span class="spacer"></span><span style="text-transform:none;letter-spacing:0;font-weight:400">click to jump</span></div>` +
+    (P.length ? P.map((p, k) => `<div class="prob" data-p="${k}">
+        <span class="ic" style="color:${({ err: 'var(--red)', warn: 'var(--orange)', info: 'var(--accent)' })[p.sev]}">${({ err: '●', warn: '▲', info: 'ℹ' })[p.sev]}</span>
+        <span class="ln">Ln ${p.line}</span><span>${esc(p.msg)}</span>
+        ${p.fix && !readOnly() ? `<button class="fix" data-fix="${k}">Fix</button>` : ''}<span class="rule">${p.rule}</span></div>`).join('')
+      : '<div class="clean">✓ No problems found</div>');
+  st._problems = P;
+  const { tables } = analyze(st.sql);
+  $('tcount').textContent = `${tables.length} table${tables.length === 1 ? '' : 's'}`;
+  $('dirty').hidden = st.sql === st.lastAnalyzed;
+  syncScroll(); cursorInfo();
+  renderBackground();
+}
+function syncScroll() {
+  const src = $('src'); $('hl').scrollTop = src.scrollTop; $('hl').scrollLeft = src.scrollLeft;
+  $('gutter').scrollTop = src.scrollTop; cursorInfo();
+}
+function cursorInfo() {
+  const src = $('src'), before = src.value.slice(0, src.selectionStart).split('\n');
+  $('cur').textContent = `Ln ${before.length}, Col ${before.at(-1).length + 1}`;
+  $('curline').style.top = (10 + (before.length - 1) * 20 - src.scrollTop) + 'px';
+  $('gutter').querySelectorAll('div').forEach((d, k) => d.classList.toggle('cur', k === before.length - 1));
+}
+function toast(msg) { const t = $('toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove('on'), 1400); }
+
+// Replace the whole text but keep it undoable with ⌘Z (execCommand keeps the native undo stack)
+function replaceAll(text) {
+  const src = $('src'); src.focus(); src.select();
+  if (!document.execCommand('insertText', false, text)) src.value = text;
+  src.setSelectionRange(0, 0); src.scrollTop = 0; refresh();
+}
+function jumpTo(line) {
+  const src = $('src'), lines = src.value.split('\n');
+  const start = lines.slice(0, line - 1).reduce((a, l) => a + l.length + 1, 0);
+  src.focus(); src.setSelectionRange(start, start + lines[line - 1].length);
+  src.scrollTop = Math.max(0, (line - 4) * 20); syncScroll();
+}
+let liveT;
+function bindEditor() {
+  const src = $('src');
+  src.addEventListener('input', () => { refresh(); if (st.live) { clearTimeout(liveT); liveT = setTimeout(() => { renderGraph(st.sql, true); refresh(); }, 600); } });
+  src.addEventListener('scroll', syncScroll);
+  ['click', 'keyup'].forEach(t => src.addEventListener(t, cursorInfo));
+  src.addEventListener('keydown', e => {
+    if (e.key === 'Tab') { e.preventDefault(); document.execCommand('insertText', false, '  '); }
+  });
+  // drag by title bar (floating mode only)
+  $('ed-bar').addEventListener('mousedown', e => {
+    if (st.mode !== 'float' || e.target.closest('button')) return;
+    const ed = $('ed'), sx = e.clientX, sy = e.clientY, ox = ed.offsetLeft, oy = ed.offsetTop;
+    const app = $('app');
+    const move = ev => {
+      ed.style.left = Math.max(0, Math.min(app.clientWidth - 120, ox + ev.clientX - sx)) + 'px';
+      ed.style.top = Math.max(0, Math.min(app.clientHeight - 40, oy + ev.clientY - sy)) + 'px';
+    };
+    const up = () => { removeEventListener('mousemove', move); removeEventListener('mouseup', up);
+      st.pos = { left: ed.offsetLeft, top: ed.offsetTop, w: ed.offsetWidth, h: ed.offsetHeight }; };
+    addEventListener('mousemove', move); addEventListener('mouseup', up);
+  });
+}
+
+// ── events ──
+$('app').addEventListener('click', e => {
+  if (e.target.closest('#expand')) return openEditor();
+  const pr = e.target.closest('[data-p]'), fx = e.target.closest('[data-fix]');
+  if (fx) { e.stopPropagation(); return applyFix(st._problems[+fx.dataset.fix]); }
+  if (pr) return jumpTo(st._problems[+pr.dataset.p].line);
+  const act = e.target.closest('[data-act]')?.dataset.act;
+  if (!act) return;
+  const ed = $('ed');
+  if (ed && st.mode === 'float') st.pos = { left: ed.offsetLeft, top: ed.offsetTop, w: ed.offsetWidth, h: ed.offsetHeight };
+  if (act === 'format') { replaceAll(formatSQL(st.sql)); toast('Formatted. ⌘Z to undo'); }
+  if (act === 'lint') { st.showProbs = !st.showProbs; $('probs').hidden = !st.showProbs; $('b-lint').classList.toggle('on', st.showProbs); }
+  if (act === 'copy') { navigator.clipboard?.writeText(st.sql).catch(() => {}); toast('Copied to clipboard'); }
+  if (act === 'mode') { st.mode = st.mode === 'float' ? 'focus' : 'float'; syncModeCtl(); mountEditor(); }
+  if (act === 'close' || act === 'close-bg') closeEditor();
+  if (act === 'run') { renderGraph(st.sql, true); refresh(); toast('Analyzed. Graph updated'); }
+  if (act === 'live') { st.live = !st.live; e.target.closest('.live').querySelector('.sw').classList.toggle('on', st.live); if (st.live) { renderGraph(st.sql, true); refresh(); } }
+  if (act === 'scratch') { st.src = 'scratch'; syncSrcCtl(); mountEditor(); renderBackground(); toast('Now a scratch query. Format is enabled'); }
+});
+function applyFix(p) {
+  if (p.fix === 'format') { replaceAll(formatSQL(st.sql)); toast('Formatted: keyword case fixed'); }
+  if (p.fix === 'trailing-comma') { replaceAll(st.sql.slice(0, p.from) + st.sql.slice(p.from + 1)); toast('Removed trailing comma'); }
+}
+$('side-ta').addEventListener('input', e => { st.sql = e.target.value; renderBackground(); });
+document.addEventListener('keydown', e => {
+  const mod = e.metaKey || e.ctrlKey;
+  if (mod && e.shiftKey && e.key.toLowerCase() === 'e') { e.preventDefault(); return st.open ? closeEditor() : openEditor(); }
+  if (!st.open) return;
+  if (e.key === 'Escape') { e.preventDefault(); closeEditor(); }
+  else if (mod && e.key === 'Enter') { e.preventDefault(); renderGraph(st.sql, true); refresh(); toast('Analyzed. Graph updated'); }
+  else if (e.shiftKey && e.altKey && (e.code === 'KeyF')) { e.preventDefault(); if (!readOnly()) { replaceAll(formatSQL(st.sql)); toast('Formatted. ⌘Z to undo'); } }
+  else if (mod && e.shiftKey && e.key.toLowerCase() === 'm') { e.preventDefault(); $('b-lint').click(); }
+});
+
+// ── mock controls ──
+function syncModeCtl() { document.querySelectorAll('#g-mode button').forEach(b => b.classList.toggle('on', b.dataset.v === st.mode)); }
+function syncSrcCtl() { document.querySelectorAll('#g-src button').forEach(b => b.classList.toggle('on', b.dataset.v === st.src)); }
+$('g-mode').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; st.mode = b.dataset.v; syncModeCtl(); if (st.open) mountEditor(); else openEditor(); });
+$('g-src').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  st.src = b.dataset.v; st.sql = st.src === 'file' ? FILE_SQL : SCRATCH_SQL; syncSrcCtl();
+  renderBackground(); renderGraph(st.sql); if (st.open) mountEditor();
+});
+
+renderBackground();
+requestAnimationFrame(() => { renderGraph(st.sql); openEditor(); });
+</script>
+</body>
+</html>

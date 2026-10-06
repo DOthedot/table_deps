@@ -56,6 +56,7 @@ Both views share one header: a **Project | Query** switch (`1` / `2`), a breadcr
 | `Enter` | Open the selected node's query |
 | `Esc` | Back to the DAG / deselect |
 | `?` | Welcome guide |
+| `⌘⇧E` / `Ctrl⇧E` | Open the SQL editor (format `⇧⌥F`, analyze `⌘↵`) |
 
 ## SQL Visualizer
 
@@ -78,6 +79,7 @@ uv run table-deps ui
 - **Edge labels** — show JOIN type (INNER, LEFT, RIGHT, FULL, CROSS); UNION branches shown as dashed cyan edges
 - **Sidebar** — table list, CTE list, summary stats, schema legend, join-type legend
 - **Example** button — loads a built-in multi-schema query instantly
+- **SQL editor** (⤢ on the SQL box) — floating, resizable editor with highlighting, **Format** (sql-formatter, lazily loaded) and **Lint** (unbalanced parens, trailing commas, JOIN without ON, `SELECT *`, implicit joins, keyword case) with one-click fixes
 - `Ctrl+Enter` / `Cmd+Enter` to re-analyse
 
 ### Example Queries

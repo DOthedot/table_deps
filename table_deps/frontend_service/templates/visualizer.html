@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="/static/css/shared.css" />
   <link rel="stylesheet" href="/static/css/visualizer.css" />
   <link rel="stylesheet" href="/static/css/tour.css" />
+  <link rel="stylesheet" href="/static/css/sql_editor.css" />
 </head>
 <body>
 
@@ -33,8 +34,14 @@
         From <code id="source-file"></code>
         <button id="scratch-btn" type="button" title="Unlock the SQL and edit it as a scratch query">Edit as scratch</button>
       </div>
-      <textarea id="sql-input"
-        placeholder="Paste your SQL here&#8230;&#10;&#10;SELECT * FROM orders&#10;  JOIN customers ON orders.customer_id = customers.id"></textarea>
+      <div class="sql-box">
+        <textarea id="sql-input"
+          placeholder="Paste your SQL here&#8230;&#10;&#10;SELECT * FROM orders&#10;  JOIN customers ON orders.customer_id = customers.id"></textarea>
+        <button id="sql-expand" class="sql-expand" type="button" title="Open in editor (⌘⇧E)" aria-label="Open SQL in editor">
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 2h4v4M6 14H2v-4M14 2 9.5 6.5M2 14l4.5-4.5"/></svg>
+        </button>
+      </div>
+      <button id="sql-lint" class="sql-lint" type="button" hidden title="Open editor to see problems"></button>
       <div class="btn-row">
         <button id="analyze-btn">&#9654; Analyze</button>
         <button id="example-btn">Example</button>
@@ -123,6 +130,8 @@
 <script src="/static/js/shell.js"></script>
 <script src="/static/js/tour.js"></script>
 <script src="/static/js/query_context.js"></script>
+<script src="/static/js/sql_tools.js"></script>
+<script src="/static/js/sql_editor.js"></script>
 <script src="/static/js/visualizer.js"></script>
 </body>
 </html>
