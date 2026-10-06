@@ -453,24 +453,37 @@ function renderGraph(data) {
     .on('end', () => { if (_firstLoad) { _firstLoad = false; fitToView(); } });
 
   // ── DRAG ──────────────────────────────────────
+  // On release the node glides back to where it was grabbed. Unpinning it straight
+  // into a hot simulation let the x/y forces fling it home and overshoot.
   const drag = d3.drag()
     .on('start', function(event, d) {
       event.sourceEvent.stopPropagation();
+      d3.select(this).interrupt('home');      // re-grabbed mid-glide: keep the original home
+      if (!d._home) d._home = [d.x, d.y];
       if (!event.active) currentSim.alphaTarget(0.3).restart();
       d.fx = d.x; d.fy = d.y;
       d3.select(this).raise().classed('grabbing', true);
       tooltip.style.display = 'none';
     })
     .on('drag', function(event, d) {
-      const t = d3.zoomTransform(svgEl);
-      d.fx += event.dx / t.k;
-      d.fy += event.dy / t.k;
+      // event.x/y are already in graph units (the drag container sits inside the zoomed group)
+      d.fx = event.x;
+      d.fy = event.y;
     })
     .on('end', function(event, d) {
-      d.fx = null; d.fy = null;
       if (!event.active) currentSim.alphaTarget(0);
-      currentSim.alpha(0.5).restart();
-      d3.select(this).classed('grabbing', false);
+      const from = [d.fx, d.fy], to = d._home;
+      d3.select(this).classed('grabbing', false)
+        .transition('home').duration(500).ease(d3.easeCubicInOut)
+        .tween('home', () => t => {
+          d.fx = from[0] + (to[0] - from[0]) * t;
+          d.fy = from[1] + (to[1] - from[1]) * t;
+          currentSim.alpha(Math.max(currentSim.alpha(), 0.3)).restart();   // neighbours settle while it glides
+        })
+        .on('end', () => {
+          d.fx = null; d.fy = null; d._home = null;
+          currentSim.alpha(Math.min(currentSim.alpha(), 0.1));   // cool down so the unpinned node doesn't dip
+        });
     });
 
   nodeSel.call(drag);
