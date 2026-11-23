@@ -21,3 +21,11 @@ htmlcov/
 .ruff_cache/
 .pytest_cache/
 .playwright-mcp/
+
+# Secrets / local env
+.env
+.env.*
+!.env.example
+
+# Personal Claude Code settings (shared config in .claude/ stays tracked)
+.claude/settings.local.json
