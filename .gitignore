@@ -27,5 +27,7 @@ htmlcov/
 .env.*
 !.env.example
 
-# Personal Claude Code settings (shared config in .claude/ stays tracked)
+# Personal Claude Code settings (contain machine paths/permissions;
+# hooks/ and commands/ in .claude/ stay tracked)
+.claude/settings.json
 .claude/settings.local.json
